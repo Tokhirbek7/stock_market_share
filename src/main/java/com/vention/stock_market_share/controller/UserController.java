@@ -1,5 +1,7 @@
 package com.vention.stock_market_share.controller;
 
+import com.vention.stock_market_share.dto.UserDTO;
+import com.vention.stock_market_share.dto.UserRegistrationDTO;
 import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,13 +16,19 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+
+    @PostMapping("/register")
+    public void registerUser(@RequestBody UserRegistrationDTO registrationDTO) {
+        userService.registerUser(registrationDTO);
+    }
+
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
+    public UserDTO getUserById(@PathVariable Long id) {
         return userService.getUserById(id);
     }
 
@@ -38,5 +46,9 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+    }
+    @DeleteMapping()
+    private void deleteAll(){
+        userService.deleteAll();
     }
 }
