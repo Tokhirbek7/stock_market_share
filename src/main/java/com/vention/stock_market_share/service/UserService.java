@@ -1,6 +1,5 @@
 package com.vention.stock_market_share.service;
 
-import com.vention.stock_market_share.dto.UserRegistrationDTO;
 import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +21,8 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public void addUser(User user) {
-        userRepository.save(user);
+    public long addUser(User user) {
+        return userRepository.save(user);
     }
 
     public void updateUser(User user) {
@@ -43,5 +42,8 @@ public class UserService {
     }
     public String findByEmail(String email){
         return userRepository.findByEmail(email);
+    }
+    public boolean isValidUser(User user){
+        return userRepository.isValidInput(user);
     }
 }
