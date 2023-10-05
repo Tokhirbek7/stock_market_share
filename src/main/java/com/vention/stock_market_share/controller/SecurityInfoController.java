@@ -1,12 +1,14 @@
 package com.vention.stock_market_share.controller;
 
-import com.vention.stock_market_share.dto.SecurityInfoDTO;
 import com.vention.stock_market_share.model.SecurityInfo;
+import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.service.SecurityInfoService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/security")
@@ -14,33 +16,39 @@ public class SecurityInfoController {
 
     private final SecurityInfoService securityInfoService;
 
-    @Autowired
+
     public SecurityInfoController(SecurityInfoService securityInfoService) {
         this.securityInfoService = securityInfoService;
     }
 
-    @PostMapping("/create")
-    public void createSecurityInfo(@RequestBody SecurityInfo securityInfo) {
-        securityInfoService.createSecurityInfo(securityInfo);
+    @PostMapping("/{userId}")
+    public ResponseEntity<String> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
+        if (Objects.equals(securityInfoService.findByUsername(securityInfo.getUsername()), securityInfo.getUsername())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This username is already taken");
+        }
+        securityInfoService.createSecurityInfo(securityInfo, userId);
+        return ResponseEntity.status(HttpStatus.OK).body("OK");
     }
 
     @GetMapping("/{id}")
-    public SecurityInfoDTO getSecurityInfoById(@PathVariable Long id) {
-        return securityInfoService.getSecurityInfoById(id);
+    public ResponseEntity<SecurityInfo> getSecurityInfoById(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(securityInfoService.getSecurityInfoById(id));
     }
 
-    @GetMapping("/all")
-    public List<SecurityInfoDTO> getAllSecurityInfo() {
-        return securityInfoService.getAllSecurityInfo();
+    @GetMapping()
+    public ResponseEntity<List<SecurityInfo>> getAllSecurityInfo() {
+        return ResponseEntity.status(HttpStatus.OK).body(securityInfoService.getAllSecurityInfo());
     }
 
-    @PutMapping("/update/{id}")
-    public void updateSecurityInfo(@PathVariable Long id, @RequestBody SecurityInfoDTO securityInfoDTO) {
-        securityInfoService.updateSecurityInfo(id, securityInfoDTO);
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateSecurityInfo(@PathVariable Long id, @RequestBody SecurityInfo securityInfo) {
+        securityInfoService.updateSecurityInfo(id, securityInfo);
+        return ResponseEntity.status(HttpStatus.OK).body("Updated successfully");
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteSecurityInfo(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteSecurityInfo(@PathVariable Long id) {
         securityInfoService.deleteSecurityInfo(id);
+        return ResponseEntity.status(HttpStatus.OK).body("A user has been Deleted");
     }
 }
