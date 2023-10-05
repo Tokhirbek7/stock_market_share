@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
 public class SecurityInfoRepository {
@@ -20,7 +21,7 @@ public class SecurityInfoRepository {
     private final String SQL_FIND_BY_USERNAME = "SELECT * FROM security_info WHERE username = ?";
     private final String FIND_ALL = "SELECT * FROM security_info";
     private final String DELETE_BY_ID = "DELETE FROM security_info WHERE id = ?";
-    private final String UPDATE_BY_ID = "UPDATE security_info SET username = ?, password = ? WHERE user_id = ?";
+    private final String UPDATE_BY_ID = "UPDATE security_info SET username = ?, password = ? WHERE id = ?";
 
 
     public void save(SecurityInfo securityInfo, Long userId) {
@@ -57,20 +58,20 @@ public class SecurityInfoRepository {
     public String findByUsername(String username) {
         SecurityInfo securityInfo = null;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SQL_FIND_BY_USERNAME)) {
+        PreparedStatement preparedStatement = connection.prepareStatement(SQL_FIND_BY_USERNAME)){
             preparedStatement.setString(1, username);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
+            try (ResultSet resultSet = preparedStatement.executeQuery()){
+                if (resultSet.next()){
                     securityInfo = mapRowToSecurityInfo(resultSet);
                 }
             }
-        } catch (SQLException e) {
+        }catch (SQLException e){
             e.printStackTrace();
         }
         if (securityInfo != null) {
             return securityInfo.getUsername();
         } else {
-            return "Username is not found";
+           return "Username is not found";
         }
 
     }
@@ -107,7 +108,6 @@ public class SecurityInfoRepository {
         return securityInfo;
     }
 
-
     public void update(SecurityInfo securityInfoDTO) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_BY_ID)) {
@@ -128,14 +128,6 @@ public class SecurityInfoRepository {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    public boolean isValidInput(SecurityInfo securityInfo) {
-        return securityInfo.getUsername() != null
-                && securityInfo.getPassword() != null;
-
-
-
     }
 
     private SecurityInfo mapRowToSecurityInfo(ResultSet resultSet) throws SQLException {
