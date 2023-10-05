@@ -23,8 +23,6 @@ public class SecurityInfoController {
 
     @PostMapping("/{userId}")
     public ResponseEntity<String> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
-        if (!securityInfoService.isValid(securityInfo))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
         if (Objects.equals(securityInfoService.findByUsername(securityInfo.getUsername()), securityInfo.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This username is already taken");
         }
@@ -44,11 +42,8 @@ public class SecurityInfoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateSecurityInfo(@PathVariable Long id, @RequestBody SecurityInfo securityInfo) {
-        if (securityInfoService.isValid(securityInfo)) {
-            securityInfoService.updateSecurityInfo(id, securityInfo);
-            return ResponseEntity.status(HttpStatus.OK).body("Updated successfully");
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
+        securityInfoService.updateSecurityInfo(id, securityInfo);
+        return ResponseEntity.status(HttpStatus.OK).body("Updated successfully");
     }
 
     @DeleteMapping("/{id}")

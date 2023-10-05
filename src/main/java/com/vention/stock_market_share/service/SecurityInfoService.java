@@ -49,10 +49,6 @@ public class SecurityInfoService {
         securityInfoRepository.delete(id);
     }
 
-    public boolean isValid(SecurityInfo securityInfo){
-        return securityInfoRepository.isValidInput(securityInfo);
-    }
-
 
 
 }
