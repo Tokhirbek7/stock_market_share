@@ -1,4 +1,4 @@
-/*
+package com.vention.stock_market_share.config;/*
 package com.vention.stock_market_share.config;
 
 import com.vention.stock_market_share.service.JwtService;

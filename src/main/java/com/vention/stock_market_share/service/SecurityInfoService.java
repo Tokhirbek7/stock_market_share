@@ -1,7 +1,6 @@
 package com.vention.stock_market_share.service;
 
 import com.vention.stock_market_share.model.SecurityInfo;
-import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.repository.SecurityInfoRepository;
 import com.vention.stock_market_share.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +46,10 @@ public class SecurityInfoService {
 
     public void deleteSecurityInfo(Long id) {
         securityInfoRepository.delete(id);
+    }
+
+    public boolean isValid(SecurityInfo securityInfo){
+        return securityInfoRepository.isValidInput(securityInfo);
     }
 
 

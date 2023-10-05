@@ -1,7 +1,6 @@
 package com.vention.stock_market_share.controller;
 
 import com.vention.stock_market_share.model.SecurityInfo;
-import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.service.SecurityInfoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +22,8 @@ public class SecurityInfoController {
 
     @PostMapping("/{userId}")
     public ResponseEntity<String> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
+        if (!securityInfoService.isValid(securityInfo))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
         if (Objects.equals(securityInfoService.findByUsername(securityInfo.getUsername()), securityInfo.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This username is already taken");
         }
@@ -42,8 +43,11 @@ public class SecurityInfoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateSecurityInfo(@PathVariable Long id, @RequestBody SecurityInfo securityInfo) {
-        securityInfoService.updateSecurityInfo(id, securityInfo);
-        return ResponseEntity.status(HttpStatus.OK).body("Updated successfully");
+        if (securityInfoService.isValid(securityInfo)) {
+            securityInfoService.updateSecurityInfo(id, securityInfo);
+            return ResponseEntity.status(HttpStatus.OK).body("Updated successfully");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
     }
 
     @DeleteMapping("/{id}")
