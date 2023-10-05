@@ -1,8 +1,6 @@
 package com.vention.stock_market_share.model;
 
 import lombok.Data;
-
-
 @Data
 public class SecurityInfo {
 

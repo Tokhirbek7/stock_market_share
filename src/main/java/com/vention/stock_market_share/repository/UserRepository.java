@@ -1,7 +1,5 @@
 package com.vention.stock_market_share.repository;
 
-import com.vention.stock_market_share.dto.UserRegistrationDTO;
-import com.vention.stock_market_share.model.SecurityInfo;
 import com.vention.stock_market_share.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -61,9 +59,10 @@ public class UserRepository {
     public long save(User user ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
+            if (isValidInput(user)){
             setPreparedStatementParameters(preparedStatement, user);
             int affectedRows = preparedStatement.executeUpdate();
-            Long id = 0l;
+            long id = 0;
             if (affectedRows == 1) {
                 try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
@@ -72,6 +71,8 @@ public class UserRepository {
                 }
             }
             user.setId(id);
+            return user.getId();
+            }
         } catch (SQLException e) {
             handleSQLException(e);
         }
@@ -133,6 +134,10 @@ public class UserRepository {
         preparedStatement.setString(3, user.getEmail());
         preparedStatement.setInt(4, user.getAge());
     }
+
+    public boolean isValidInput(User user){
+        return user.getEmail()!=null;
+    }
     public String findByEmail(String email){
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_BY_EMAIL)) {
@@ -160,8 +165,7 @@ public class UserRepository {
             user.setLastname(registrationDTO.getLastname());
             user.setEmail(registrationDTO.getEmail());
             user.setAge(registrationDTO.getAge());
-
-            userId = save(user);
+                userId = save(user);
             commitTransaction(connection);
         } catch (SQLException e) {
             rollbackTransaction(connection);
