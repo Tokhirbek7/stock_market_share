@@ -1,6 +1,5 @@
 package com.vention.stock_market_share.repository;
 
-import com.vention.stock_market_share.dto.SecurityInfoDTO;
 import com.vention.stock_market_share.model.SecurityInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -9,63 +8,109 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
 public class SecurityInfoRepository {
 
-    private final DataSource dataSource;
-
     @Autowired
-    public SecurityInfoRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private DataSource dataSource;
 
-    public void save(SecurityInfo securityInfo) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO security_info (username, password, user_id) VALUES (?, ?, ?)")) {
-            preparedStatement.setString(1, securityInfo.getUsername());
-            preparedStatement.setString(2, securityInfo.getPassword());
-            preparedStatement.setLong(3, securityInfo.getUserId());
-            preparedStatement.executeUpdate();
+    private final String SQL_SAVE = "INSERT INTO security_info (username, password, user_id) VALUES (?, ?, ?)";
+    private final String SQL_FIND_BY_ID = "SELECT * FROM security_info WHERE id = ?";
+    private final String SQL_FIND_BY_USERNAME = "SELECT * FROM security_info WHERE username = ?";
+    private final String FIND_ALL = "SELECT * FROM security_info";
+    private final String DELETE_BY_ID = "DELETE FROM security_info WHERE id = ?";
+    private final String UPDATE_BY_ID = "UPDATE security_info SET username = ?, password = ? WHERE id = ?";
+
+
+    public void save(SecurityInfo securityInfo, Long userId) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_SAVE)) {
+                preparedStatement.setString(1, securityInfo.getUsername());
+                preparedStatement.setString(2, securityInfo.getPassword());
+                preparedStatement.setLong(3, userId);
+                preparedStatement.executeUpdate();
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                e.printStackTrace();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public SecurityInfoDTO findById(Long id) {
-        SecurityInfoDTO securityInfoDTO = null;
+
+    public String findByUsername(String username) {
+        SecurityInfo securityInfo = null;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM security_info WHERE id = ?")) {
+        PreparedStatement preparedStatement = connection.prepareStatement(SQL_FIND_BY_USERNAME)){
+            preparedStatement.setString(1, username);
+            try (ResultSet resultSet = preparedStatement.executeQuery()){
+                if (resultSet.next()){
+                    securityInfo = mapRowToSecurityInfo(resultSet);
+                }
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        if (securityInfo != null) {
+            return securityInfo.getUsername();
+        } else {
+           return "Username is not found";
+        }
+
+    }
+
+
+    public SecurityInfo findById(Long id) {
+        SecurityInfo securityInfo = null;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    securityInfoDTO = mapRowToSecurityInfo(resultSet);
+                    securityInfo = mapRowToSecurityInfo(resultSet);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return securityInfoDTO;
+        return securityInfo;
     }
 
-    public List<SecurityInfoDTO> findAll() {
-        List<SecurityInfoDTO> securityInfoDTOs = new ArrayList<>();
+    public List<SecurityInfo> findAll() {
+        List<SecurityInfo> securityInfo = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("SELECT * FROM security_info")) {
+             ResultSet resultSet = statement.executeQuery(FIND_ALL)) {
             while (resultSet.next()) {
-                SecurityInfoDTO securityInfoDTO = mapRowToSecurityInfo(resultSet);
-                securityInfoDTOs.add(securityInfoDTO);
+                SecurityInfo securityInfoDTO = mapRowToSecurityInfo(resultSet);
+                securityInfo.add(securityInfoDTO);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return securityInfoDTOs;
+        return securityInfo;
     }
 
-    public void update(SecurityInfoDTO securityInfoDTO) {
+    public void update(SecurityInfo securityInfoDTO) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("UPDATE security_info SET username = ?, password = ? WHERE id = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_BY_ID)) {
             preparedStatement.setString(1, securityInfoDTO.getUsername());
             preparedStatement.setString(2, securityInfoDTO.getPassword());
             preparedStatement.setLong(3, securityInfoDTO.getId());
@@ -77,7 +122,7 @@ public class SecurityInfoRepository {
 
     public void delete(Long id) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM security_info WHERE id = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_BY_ID)) {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -85,13 +130,12 @@ public class SecurityInfoRepository {
         }
     }
 
-    private SecurityInfoDTO mapRowToSecurityInfo(ResultSet resultSet) throws SQLException {
-        SecurityInfoDTO securityInfoDTO = new SecurityInfoDTO();
-        securityInfoDTO.setId(resultSet.getLong("id"));
-        securityInfoDTO.setUsername(resultSet.getString("username"));
-        securityInfoDTO.setPassword(resultSet.getString("password"));
-        securityInfoDTO.setUserId(resultSet.getLong("user_id"));
-
-        return securityInfoDTO;
+    private SecurityInfo mapRowToSecurityInfo(ResultSet resultSet) throws SQLException {
+        SecurityInfo securityInfo = new SecurityInfo();
+        securityInfo.setId(resultSet.getLong("id"));
+        securityInfo.setUsername(resultSet.getString("username"));
+        securityInfo.setPassword(resultSet.getString("password"));
+        securityInfo.setUserId(resultSet.getLong("user_id"));
+        return securityInfo;
     }
 }

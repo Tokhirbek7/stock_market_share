@@ -1,6 +1,5 @@
 package com.vention.stock_market_share.service;
 
-import com.vention.stock_market_share.dto.UserDTO;
 import com.vention.stock_market_share.dto.UserRegistrationDTO;
 import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.repository.UserRepository;
@@ -15,11 +14,11 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<UserDTO> getAllUsers() {
+    public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    public UserDTO getUserById(Long id) {
+    public User getUserById(Long id) {
         return userRepository.findById(id);
     }
 
@@ -39,7 +38,10 @@ public class UserService {
         userRepository.deleteAll();
     }
 
-    public void registerUser(UserRegistrationDTO userRegistrationDTO){
-        userRepository.registerUser(userRegistrationDTO);
+    public long registerUser(User user){
+        return userRepository.registerUser(user);
+    }
+    public String findByEmail(String email){
+        return userRepository.findByEmail(email);
     }
 }
