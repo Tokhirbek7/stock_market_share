@@ -1,6 +1,5 @@
 package com.vention.stock_market_share.controller;
 
-import com.vention.stock_market_share.dto.UserRegistrationDTO;
 import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -24,7 +23,9 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody User user) {
-        if (Objects.equals(userService.findByEmail(user.getEmail()), user.getEmail())){
+        if (!userService.isValidUser(user))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
+        if (Objects.equals(userService.findByEmail(user.getEmail()), user.getEmail())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This email is already registered. Please use a different email.");
         }
         userService.registerUser(user);
@@ -43,24 +44,31 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<String> addUser(@RequestBody User user) {
-        userService.addUser(user);
-        return ResponseEntity.status(HttpStatus.OK).body("The user is added successfully");
+        long savedUserId = userService.addUser(user);
+        if (savedUserId != 0)
+            return ResponseEntity.status(HttpStatus.OK).body("The user is added successfully");
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The user is not saved please check your input");
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody User user) {
-        user.setId(id);
-        userService.updateUser(user);
-        return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id+ " has been updated");
+        if(userService.isValidUser(user)) {
+            user.setId(id);
+            userService.updateUser(user);
+            return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been updated");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id+ " has been Deleted");
+        return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been Deleted");
     }
+
     @DeleteMapping()
-    private ResponseEntity<String> deleteAll(){
+    private ResponseEntity<String> deleteAll() {
         userService.deleteAll();
         return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
     }
