@@ -1,7 +1,14 @@
 package com.vention.stock_market_share.controller;
 
+import com.vention.stock_market_share.exception.DuplicateEmailException;
+import com.vention.stock_market_share.exception.InvalidInputException;
+import com.vention.stock_market_share.exception.MissingEmailException;
+import com.vention.stock_market_share.exception.UserAddException;
 import com.vention.stock_market_share.model.User;
+import com.vention.stock_market_share.service.EmailService;
 import com.vention.stock_market_share.service.UserService;
+import com.vention.stock_market_share.token.RegistrationTokenGenerator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,20 +22,29 @@ public class UserController {
 
 
     private final UserService userService;
+    private final EmailService emailService;
+    private final RegistrationTokenGenerator tokenGenerator;
+    @Value("${registration.link}")
+    private String basicLink;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, EmailService emailService, RegistrationTokenGenerator tokenGenerator) {
         this.userService = userService;
+        this.emailService = emailService;
+        this.tokenGenerator = tokenGenerator;
     }
-
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody User user) {
-        if (!userService.isValidUser(user))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
-        if (Objects.equals(userService.findByEmail(user.getEmail()), user.getEmail())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This email is already registered. Please use a different email.");
+        if (user.getEmail()==null) {
+            throw new MissingEmailException("Please check your input");
         }
-        userService.registerUser(user);
+        if (Objects.equals(userService.findByEmail(user.getEmail()), user.getEmail())) {
+            throw new DuplicateEmailException("This email is already registered.");
+        }
+        long userId = userService.registerUser(user);
+        String token = tokenGenerator.generateToken();
+        String registrationLink = basicLink+token+userId;
+        emailService.sendMailWithLink(user.getEmail(),registrationLink);
         return ResponseEntity.status(HttpStatus.OK).body("The user is registered successfully The link has been sent to this email");
     }
 
@@ -45,20 +61,21 @@ public class UserController {
     @PostMapping
     public ResponseEntity<String> addUser(@RequestBody User user) {
         long savedUserId = userService.addUser(user);
-        if (savedUserId != 0)
-            return ResponseEntity.status(HttpStatus.OK).body("The user is added successfully");
+        if (savedUserId != 0) {
+            return ResponseEntity.status(HttpStatus.CREATED).body("The user is added successfully");
+        }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The user is not saved please check your input");
+        throw new UserAddException("The user is not saved please check your input");
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody User user) {
-        if(userService.isValidUser(user)) {
+        if(user.getEmail() == null) {
             user.setId(id);
             userService.updateUser(user);
             return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been updated");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
+        throw new InvalidInputException("Please check your input");
     }
 
     @DeleteMapping("/{id}")

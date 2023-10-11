@@ -56,22 +56,25 @@ public class UserRepository {
         return null;
     }
 
-    public long save(User user ) {
+    public long save(User user) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
-            if (isValidInput(user)){
-            setPreparedStatementParameters(preparedStatement, user);
-            int affectedRows = preparedStatement.executeUpdate();
-            long id = 0;
-            if (affectedRows == 1) {
-                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        id = generatedKeys.getLong(1);
+            if (user.getEmail() != null) {
+                preparedStatement.setString(1, user.getFirstname());
+                preparedStatement.setString(2, user.getLastname());
+                preparedStatement.setString(3, user.getEmail());
+                preparedStatement.setInt(4, user.getAge());
+                int affectedRows = preparedStatement.executeUpdate();
+                long id = 0;
+                if (affectedRows == 1) {
+                    try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            id = generatedKeys.getLong(1);
+                        }
                     }
                 }
-            }
-            user.setId(id);
-            return user.getId();
+                user.setId(id);
+                return user.getId();
             }
         } catch (SQLException e) {
             handleSQLException(e);
@@ -83,15 +86,24 @@ public class UserRepository {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            startTransaction(connection);
+            connection.setAutoCommit(false);
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE)) {
-                setPreparedStatementParameters(preparedStatement, user);
+                preparedStatement.setString(1, user.getFirstname());
+                preparedStatement.setString(2, user.getLastname());
+                preparedStatement.setString(3, user.getEmail());
+                preparedStatement.setInt(4, user.getAge());
                 preparedStatement.setLong(5, user.getId());
                 preparedStatement.executeUpdate();
             }
 
-            commitTransaction(connection);
+            try {
+                if (connection != null) {
+                    connection.commit();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         } catch (SQLException e) {
             handleSQLException(e);
             rollbackTransaction(connection);
@@ -99,6 +111,7 @@ public class UserRepository {
             closeConnection(connection);
         }
     }
+
     public void delete(Long id) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_BY_ID)) {
@@ -128,17 +141,8 @@ public class UserRepository {
         return user;
     }
 
-    private void setPreparedStatementParameters(PreparedStatement preparedStatement, User user) throws SQLException {
-        preparedStatement.setString(1, user.getFirstname());
-        preparedStatement.setString(2, user.getLastname());
-        preparedStatement.setString(3, user.getEmail());
-        preparedStatement.setInt(4, user.getAge());
-    }
 
-    public boolean isValidInput(User user){
-        return user.getEmail()!=null;
-    }
-    public String findByEmail(String email){
+    public String findByEmail(String email) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_BY_EMAIL)) {
             preparedStatement.setString(1, email);
@@ -155,23 +159,17 @@ public class UserRepository {
 
     public long registerUser(User registrationDTO) {
         long userId = -1;
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-
-            startTransaction(connection);
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
             User user = new User();
             user.setFirstname(registrationDTO.getFirstname());
             user.setLastname(registrationDTO.getLastname());
             user.setEmail(registrationDTO.getEmail());
             user.setAge(registrationDTO.getAge());
-                userId = save(user);
-            commitTransaction(connection);
+            userId = save(user);
+            connection.commit();
         } catch (SQLException e) {
-            rollbackTransaction(connection);
-            e.printStackTrace();
-        } finally {
-            closeConnection(connection);
+            handleSQLException(e);
         }
 
         return userId;
@@ -179,19 +177,6 @@ public class UserRepository {
 
 
 
-    private void startTransaction(Connection connection) throws SQLException {
-        connection.setAutoCommit(false);
-    }
-
-    private void commitTransaction(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.commit();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     private void rollbackTransaction(Connection connection) {
         try {
