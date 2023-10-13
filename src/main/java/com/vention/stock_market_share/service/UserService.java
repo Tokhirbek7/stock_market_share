@@ -43,7 +43,5 @@ public class UserService {
     public String findByEmail(String email){
         return userRepository.findByEmail(email);
     }
-    public boolean isValidUser(User user){
-        return userRepository.isValidInput(user);
-    }
+
 }
