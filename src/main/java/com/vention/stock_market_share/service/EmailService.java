@@ -1,19 +1,18 @@
 package com.vention.stock_market_share.service;
 
-import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.util.ByteArrayDataSource;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMailMessage;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class EmailService {
     private final JavaMailSender mailSender;
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -32,30 +31,10 @@ public class EmailService {
             mailSender.send(message);
             return "mail sent";
         } catch (Exception e) {
-            throw new RuntimeException();
+            logger.error("An error occurred while sending the email", e);
+            return "failed to send mail";
         }
     }
 
-    public String sendMail(MultipartFile[] file, String to, String[] cc, String subject, String body) {
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
-            mimeMessageHelper.setFrom(fromMail);
-            mimeMessageHelper.setTo(to);
-            mimeMessageHelper.setCc(cc);
-            mimeMessageHelper.setSubject(subject);
-            mimeMessageHelper.setText(body);
-            for (int i = 0; i < file.length; i++) {
-                mimeMessageHelper.addAttachment(
-                        file[i].getOriginalFilename(),
-                        new ByteArrayResource(file[i].getBytes())
-                );
-            }
-            mailSender.send(mimeMessage);
-            return "mail sent";
 
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
-    }
 }
