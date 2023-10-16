@@ -3,12 +3,12 @@ package com.vention.stock_market_share.controller;
 import com.vention.stock_market_share.response.AlphaVintageResponse;
 import com.vention.stock_market_share.service.AlphaVintageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping ("/stock")
 public class StockController {
     private final AlphaVintageService alphaVintageService;
 
@@ -17,15 +17,16 @@ public class StockController {
         this.alphaVintageService = alphaVintageService;
     }
 
-    @GetMapping("/searchStockBySymbol")
-    public ResponseEntity<AlphaVintageResponse> searchStockBySymbol(@RequestParam String symbol, @RequestParam String apiKey) {
+    @GetMapping("/{symbol}")
+    public ResponseEntity<AlphaVintageResponse> searchStockBySymbol(@PathVariable String symbol, @Value("${alphavantage.api.key}") String apiKey) {
         AlphaVintageResponse response = alphaVintageService.searchStockBySymbol(symbol, apiKey);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/searchAllTradingShares")
-    public ResponseEntity<AlphaVintageResponse> searchAllTradingShares(@RequestParam String apiKey) {
+    @GetMapping()
+    public ResponseEntity<AlphaVintageResponse> searchAllTradingShares(@Value("${alphavantage.api.key}") String apiKey) {
         AlphaVintageResponse response = alphaVintageService.searchAllTradingShares(apiKey);
         return ResponseEntity.ok(response);
+
     }
 }
