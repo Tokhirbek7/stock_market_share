@@ -1,32 +1,32 @@
 package com.vention.stock_market_share.controller;
 
-import com.vention.stock_market_share.response.AlphaVintageResponse;
-import com.vention.stock_market_share.service.AlphaVintageService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import com.vention.stock_market_share.response.TwelveDataApiResponse;
+import com.vention.stock_market_share.service.TwelveDataService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping ("/stock")
+@RequestMapping("/stocks")
+@Slf4j
 public class StockController {
-    private final AlphaVintageService alphaVintageService;
-
-    @Autowired
-    public StockController(AlphaVintageService alphaVintageService) {
-        this.alphaVintageService = alphaVintageService;
+    private final TwelveDataService twelveDataService;
+    public StockController(TwelveDataService twelveDataService) {
+        this.twelveDataService = twelveDataService;
     }
 
     @GetMapping("/{symbol}")
-    public ResponseEntity<AlphaVintageResponse> searchStockBySymbol(@PathVariable String symbol, @Value("${alphavantage.api.key}") String apiKey) {
-        AlphaVintageResponse response = alphaVintageService.searchStockBySymbol(symbol, apiKey);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<TwelveDataApiResponse> searchStockBySymbol(@PathVariable String symbol) {
+        TwelveDataApiResponse twelveDataApiResponse = twelveDataService.searchStockBySymbol(symbol);
+        return ResponseEntity.ok(twelveDataApiResponse);
     }
 
-    @GetMapping()
-    public ResponseEntity<AlphaVintageResponse> searchAllTradingShares(@Value("${alphavantage.api.key}") String apiKey) {
-        AlphaVintageResponse response = alphaVintageService.searchAllTradingShares(apiKey);
-        return ResponseEntity.ok(response);
-
+    @GetMapping
+    public ResponseEntity<?> searchAllStocks() {
+        TwelveDataApiResponse twelveDataApiResponse = twelveDataService.searchAllStocks();
+        return ResponseEntity.ok(twelveDataApiResponse);
     }
 }

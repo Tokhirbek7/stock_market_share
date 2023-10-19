@@ -1,18 +1,15 @@
 package com.vention.stock_market_share.service;
 
-import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-
+@Slf4j
 @Service
 public class EmailService {
     private final JavaMailSender mailSender;
-    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -31,7 +28,7 @@ public class EmailService {
             mailSender.send(message);
             return "mail sent";
         } catch (Exception e) {
-            logger.error("An error occurred while sending the email", e);
+            log.error("An error occurred while sending the email", e);
             return "failed to send mail";
         }
     }

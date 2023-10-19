@@ -14,8 +14,6 @@ public class UserRepository {
 
     @Autowired
     private DataSource dataSource;
-    @Autowired
-    private SecurityInfoRepository securityInfoRepository;
 
     private final String SQL_GET_ALL = "SELECT * FROM Users";
     private final String SQL_GET_BY_EMAIL = "SELECT * FROM Users WHERE email = ?";
@@ -174,10 +172,6 @@ public class UserRepository {
 
         return userId;
     }
-
-
-
-
     private void rollbackTransaction(Connection connection) {
         try {
             if (connection != null) {
@@ -197,7 +191,6 @@ public class UserRepository {
             e.printStackTrace();
         }
     }
-
     private void handleSQLException(SQLException e) {
         e.printStackTrace();
     }
