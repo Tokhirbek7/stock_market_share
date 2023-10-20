@@ -24,9 +24,7 @@ public class SecurityInfoRepository {
 
 
     public void save(SecurityInfo securityInfo, Long userId) {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_SAVE)) {
@@ -34,7 +32,6 @@ public class SecurityInfoRepository {
                 preparedStatement.setString(2, securityInfo.getPassword());
                 preparedStatement.setLong(3, userId);
                 preparedStatement.executeUpdate();
-
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
@@ -42,17 +39,8 @@ public class SecurityInfoRepository {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
     }
-
 
     public String findByUsername(String username) {
         SecurityInfo securityInfo = null;
@@ -133,7 +121,6 @@ public class SecurityInfoRepository {
     public boolean isValidInput(SecurityInfo securityInfo) {
         return securityInfo.getUsername() != null
                 && securityInfo.getPassword() != null;
-
 
 
     }

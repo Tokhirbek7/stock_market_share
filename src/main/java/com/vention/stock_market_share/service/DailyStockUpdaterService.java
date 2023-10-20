@@ -19,7 +19,7 @@ public class DailyStockUpdaterService {
         this.twelveDataService = twelveDataService;
         this.stockDataRepository = stockDataRepository;
     }
-    @Scheduled(cron = "0 22 16 * * *")
+    @Scheduled(cron = "0 0 0 * * *")
     public void dailyUpdateAllStockData(){
         TwelveDataApiResponse twelveDataApiResponse = twelveDataService.searchAllStocks();
         List<TwelveDataApiResponse.StockData> data = twelveDataApiResponse.getData();
@@ -29,6 +29,7 @@ public class DailyStockUpdaterService {
             stock.setSymbol(datum.getSymbol());
             stock.setName(datum.getName());
             stock.setCountry(datum.getCountry());
+            stock.setCurrency(datum.getCurrency());
             stock.setExchange(datum.getExchange());
             stock.setMicCode(datum.getMicCode());
             stock.setCountry(datum.getCountry());
@@ -40,5 +41,4 @@ public class DailyStockUpdaterService {
             stockDataRepository.save(value);
         }
     }
-
 }

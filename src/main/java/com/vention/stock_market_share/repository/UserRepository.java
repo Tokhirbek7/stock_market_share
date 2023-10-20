@@ -34,7 +34,7 @@ public class UserRepository {
                 users.add(user);
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return users;
     }
@@ -49,7 +49,7 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return null;
     }
@@ -75,15 +75,13 @@ public class UserRepository {
                 return user.getId();
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return 0;
     }
 
     public void update(User user) {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE)) {
@@ -93,22 +91,16 @@ public class UserRepository {
                 preparedStatement.setInt(4, user.getAge());
                 preparedStatement.setLong(5, user.getId());
                 preparedStatement.executeUpdate();
-            }
-
-            try {
-                if (connection != null) {
-                    connection.commit();
-                }
+                connection.commit();
             } catch (SQLException e) {
                 e.printStackTrace();
+                connection.rollback();
             }
         } catch (SQLException e) {
-            handleSQLException(e);
-            rollbackTransaction(connection);
-        } finally {
-            closeConnection(connection);
+            e.printStackTrace();
         }
     }
+
 
     public void delete(Long id) {
         try (Connection connection = dataSource.getConnection();
@@ -116,7 +108,7 @@ public class UserRepository {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
     }
 
@@ -150,7 +142,7 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return null;
     }
@@ -167,31 +159,11 @@ public class UserRepository {
             userId = save(user);
             connection.commit();
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
-
         return userId;
     }
-    private void rollbackTransaction(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.rollback();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
-    private void closeConnection(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    private void handleSQLException(SQLException e) {
-        e.printStackTrace();
-    }
+
+
 }

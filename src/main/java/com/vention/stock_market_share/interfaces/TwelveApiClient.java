@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Component
 @FeignClient(name = "twelveApi", url = "${twelveDate.base.url}")
+
 public interface TwelveApiClient {
     @GetMapping("/stocks")
     TwelveDataApiResponse searchStockBySymbol(@RequestParam("symbol") String symbol);
