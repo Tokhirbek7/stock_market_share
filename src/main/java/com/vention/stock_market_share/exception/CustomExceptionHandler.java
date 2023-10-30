@@ -25,4 +25,9 @@ public class CustomExceptionHandler extends Exception {
     public ResponseEntity<String> handleInvalidInputException(InvalidInputException ex){
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+    @ExceptionHandler(TwelveDataApiException.class)
+    public ResponseEntity<Object> handleAlphaVantageApiException(TwelveDataApiException ex) {
+        String errorMessage = "An error occurred while interacting with the AlphaVantage API.";
+        return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

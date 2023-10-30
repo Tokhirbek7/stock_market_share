@@ -1,6 +1,7 @@
 package com.vention.stock_market_share.repository;
 
 import com.vention.stock_market_share.model.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -10,12 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
+@Slf4j
 public class UserRepository {
-
     @Autowired
     private DataSource dataSource;
-    @Autowired
-    private SecurityInfoRepository securityInfoRepository;
 
     private final String SQL_GET_ALL = "SELECT * FROM Users";
     private final String SQL_GET_BY_EMAIL = "SELECT * FROM Users WHERE email = ?";
@@ -25,18 +24,18 @@ public class UserRepository {
     private final String SQL_DELETE_BY_ID = "DELETE FROM Users WHERE id = ?";
     private final String DELETE_ALL = "DELETE FROM Users";
 
+
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(SQL_GET_ALL)) {
-
             while (resultSet.next()) {
                 User user = mapRowToUser(resultSet);
                 users.add(user);
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return users;
     }
@@ -51,7 +50,7 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return null;
     }
@@ -77,15 +76,13 @@ public class UserRepository {
                 return user.getId();
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return 0;
     }
 
     public void update(User user) {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE)) {
@@ -95,20 +92,13 @@ public class UserRepository {
                 preparedStatement.setInt(4, user.getAge());
                 preparedStatement.setLong(5, user.getId());
                 preparedStatement.executeUpdate();
-            }
-
-            try {
-                if (connection != null) {
-                    connection.commit();
-                }
+                connection.commit();
             } catch (SQLException e) {
                 e.printStackTrace();
+                connection.rollback();
             }
         } catch (SQLException e) {
-            handleSQLException(e);
-            rollbackTransaction(connection);
-        } finally {
-            closeConnection(connection);
+            e.printStackTrace();
         }
     }
 
@@ -118,17 +108,19 @@ public class UserRepository {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
     }
 
-    public void deleteAll() {
+    public int deleteAll() {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
-            statement.executeUpdate(DELETE_ALL);
+             return statement.executeUpdate(DELETE_ALL);
         } catch (SQLException e) {
+            log.error("error occurred while deleting all of the users");
             e.printStackTrace();
         }
+        return 0;
     }
 
     private User mapRowToUser(ResultSet resultSet) throws SQLException {
@@ -142,17 +134,17 @@ public class UserRepository {
     }
 
 
-    public String findByEmail(String email) {
+    public User findByEmail(String email) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_BY_EMAIL)) {
             preparedStatement.setString(1, email);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    return mapRowToUser(resultSet).getEmail();
+                    return mapRowToUser(resultSet);
                 }
             }
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
         return null;
     }
@@ -169,36 +161,10 @@ public class UserRepository {
             userId = save(user);
             connection.commit();
         } catch (SQLException e) {
-            handleSQLException(e);
+            e.printStackTrace();
         }
-
         return userId;
     }
 
 
-
-
-    private void rollbackTransaction(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.rollback();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void closeConnection(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void handleSQLException(SQLException e) {
-        e.printStackTrace();
-    }
 }
