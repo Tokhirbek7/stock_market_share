@@ -1,27 +1,24 @@
 package com.vention.stock_market_share.repository;
 
+import com.vention.stock_market_share.model.Stock;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.sql.DataSource;
-
-import com.vention.stock_market_share.model.Stock;
-import com.vention.stock_market_share.model.User;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
 
 @Slf4j
 @Repository
 public class StockDataRepository {
-    private final DataSource dataSource;
+    @Autowired
+    private DataSource dataSource;
     private final String SQL_INSERT = "INSERT INTO Stock (symbol, name, currency, exchange, mic_code, country, type, date) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     private final String FIND_BY_ID = "SELECT * from Stock where id = ?";
-
-    public StockDataRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     public void save(Stock stock) {
         try (Connection connection = dataSource.getConnection()) {
@@ -57,7 +54,7 @@ public class StockDataRepository {
                 }
             }
         } catch (SQLException e) {
-            log.error("Stock is not found");
+            log.error("Error while finding stock by ID: " + e.getMessage(), e);
         }
         return null;
     }
@@ -69,7 +66,7 @@ public class StockDataRepository {
         stock.setName(resultSet.getString("name"));
         stock.setCurrency(resultSet.getString("currency"));
         stock.setExchange(resultSet.getString("exchange"));
-        stock.setMicCode(resultSet.getString("micCode"));
+        stock.setMicCode(resultSet.getString("mic_code"));
         stock.setCountry(resultSet.getString("country"));
         stock.setType(resultSet.getString("type"));
         stock.setDate(resultSet.getDate("date"));

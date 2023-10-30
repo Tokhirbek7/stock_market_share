@@ -11,17 +11,14 @@ import java.util.List;
 
 @Repository
 public class SecurityInfoRepository {
-
     @Autowired
     private DataSource dataSource;
-
     private final String SQL_SAVE = "INSERT INTO security_info (username, password, user_id) VALUES (?, ?, ?)";
     private final String SQL_FIND_BY_ID = "SELECT * FROM security_info WHERE id = ?";
     private final String SQL_FIND_BY_USERNAME = "SELECT * FROM security_info WHERE username = ?";
     private final String FIND_ALL = "SELECT * FROM security_info";
     private final String DELETE_BY_ID = "DELETE FROM security_info WHERE id = ?";
     private final String UPDATE_BY_ID = "UPDATE security_info SET username = ?, password = ? WHERE user_id = ?";
-
 
     public void save(SecurityInfo securityInfo, Long userId) {
         try (Connection connection = dataSource.getConnection()) {

@@ -17,11 +17,9 @@ public class SecurityInfoController {
 
     private final SecurityInfoService securityInfoService;
 
-
     public SecurityInfoController(SecurityInfoService securityInfoService) {
         this.securityInfoService = securityInfoService;
     }
-
     @PostMapping("/{userId}")
     public ResponseEntity<String> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
         if (!securityInfoService.isValid(securityInfo)) {

@@ -1,6 +1,7 @@
 package com.vention.stock_market_share.repository;
 
 import com.vention.stock_market_share.model.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -10,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
+@Slf4j
 public class UserRepository {
-
     @Autowired
     private DataSource dataSource;
 
@@ -23,12 +24,12 @@ public class UserRepository {
     private final String SQL_DELETE_BY_ID = "DELETE FROM Users WHERE id = ?";
     private final String DELETE_ALL = "DELETE FROM Users";
 
+
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(SQL_GET_ALL)) {
-
             while (resultSet.next()) {
                 User user = mapRowToUser(resultSet);
                 users.add(user);
@@ -101,7 +102,6 @@ public class UserRepository {
         }
     }
 
-
     public void delete(Long id) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_BY_ID)) {
@@ -112,13 +112,15 @@ public class UserRepository {
         }
     }
 
-    public void deleteAll() {
+    public int deleteAll() {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
-            statement.executeUpdate(DELETE_ALL);
+             return statement.executeUpdate(DELETE_ALL);
         } catch (SQLException e) {
+            log.error("error occurred while deleting all of the users");
             e.printStackTrace();
         }
+        return 0;
     }
 
     private User mapRowToUser(ResultSet resultSet) throws SQLException {
@@ -132,13 +134,13 @@ public class UserRepository {
     }
 
 
-    public String findByEmail(String email) {
+    public User findByEmail(String email) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_BY_EMAIL)) {
             preparedStatement.setString(1, email);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    return mapRowToUser(resultSet).getEmail();
+                    return mapRowToUser(resultSet);
                 }
             }
         } catch (SQLException e) {
@@ -163,7 +165,6 @@ public class UserRepository {
         }
         return userId;
     }
-
 
 
 }

@@ -33,14 +33,14 @@ public class UserService {
         userRepository.delete(id);
     }
 
-    public void deleteAll(){
-        userRepository.deleteAll();
+    public int deleteAll(){
+        return userRepository.deleteAll();
     }
 
     public long registerUser(User user){
         return userRepository.registerUser(user);
     }
-    public String findByEmail(String email){
+    public User findByEmail(String email){
         return userRepository.findByEmail(email);
     }
 

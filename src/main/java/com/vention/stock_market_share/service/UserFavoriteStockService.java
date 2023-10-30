@@ -6,6 +6,7 @@ import com.vention.stock_market_share.model.UserFavoriteStock;
 import com.vention.stock_market_share.repository.StockDataRepository;
 import com.vention.stock_market_share.repository.UserFavoriteStockRepository;
 import com.vention.stock_market_share.repository.UserRepository;
+import com.vention.stock_market_share.request.AddFavoriteStocksRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,20 +24,36 @@ public class UserFavoriteStockService {
         this.stockDataRepository = stockDataRepository;
     }
 
-    public void addFavoriteStocksForUser(Long userId, List<Long> stockIds) {
-        if (!userExists(userId) || !allStocksExist(stockIds)) {
+    public void addFavoriteStocksForUser(AddFavoriteStocksRequest addFavoriteStocksRequest) {
+        if (!userExists(addFavoriteStocksRequest.getUserId()) || !allStocksExist(addFavoriteStocksRequest.getStockIds())) {
             throw new IllegalArgumentException("User or stock not found");
         }
-        for (Long stockId : stockIds) {
-            UserFavoriteStock favoriteStock = new UserFavoriteStock(userId, stockId);
-            userFavoriteStockRepository.save(favoriteStock);
+        boolean isExisted = true;
+        for (Long stockId : addFavoriteStocksRequest.getStockIds()) {
+            if (!userFavoriteStockRepository.existsByUserIdAndStockId(addFavoriteStocksRequest.getUserId(), stockId)) {
+                isExisted = false;
+                UserFavoriteStock favoriteStock = new UserFavoriteStock(addFavoriteStocksRequest.getUserId(), stockId);
+                userFavoriteStockRepository.save(favoriteStock);
+            }
         }
+        if (isExisted) {
+            throw new IllegalArgumentException("This stock has already been added to your favourites!!");
+        }
+    }
+    public List<Stock> getFavoriteStocks(Long userId){
+        return userFavoriteStockRepository.getFavoriteStocks(userId);
+    }
+    public List<User> getAllUsersWhoLikedStock(){
+        return userFavoriteStockRepository.getAllUsersWhoLikedStocks();
     }
 
     private boolean allStocksExist(List<Long> stockIds) {
         List<Stock> stockList = new ArrayList<>();
         for (Long stockId : stockIds) {
             Stock stockById = stockDataRepository.findStockById(stockId);
+            if (stockById == null) {
+                return false;
+            }
             stockList.add(stockById);
         }
         return !stockList.isEmpty();

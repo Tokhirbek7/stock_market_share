@@ -19,8 +19,9 @@ public class DailyStockUpdaterService {
         this.twelveDataService = twelveDataService;
         this.stockDataRepository = stockDataRepository;
     }
+
     @Scheduled(cron = "0 0 0 * * *")
-    public void dailyUpdateAllStockData(){
+    public void dailyUpdateAllStockData() {
         TwelveDataApiResponse twelveDataApiResponse = twelveDataService.searchAllStocks();
         List<TwelveDataApiResponse.StockData> data = twelveDataApiResponse.getData();
         List<Stock> stockList = new ArrayList<>();

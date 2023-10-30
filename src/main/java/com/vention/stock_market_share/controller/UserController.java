@@ -11,6 +11,7 @@ import com.vention.stock_market_share.token.RegistrationTokenGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,16 +36,17 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody User user) {
-        if (user.getEmail()==null) {
+        if (user.getEmail() == null) {
             throw new MissingEmailException("Please check your input");
         }
-        if (Objects.equals(userService.findByEmail(user.getEmail()), user.getEmail())) {
+        User byEmail = userService.findByEmail(user.getEmail());
+        if (byEmail.getEmail().equals(user.getEmail())) {
             throw new DuplicateEmailException("This email is already registered.");
         }
         long userId = userService.registerUser(user);
         String token = tokenGenerator.generateToken();
-        String registrationLink = basicLink+token+userId;
-        emailService.sendMailWithLink(user.getEmail(),registrationLink);
+        String registrationLink = basicLink + token + userId;
+        emailService.sendMailWithLink(user.getEmail(), registrationLink);
         return ResponseEntity.status(HttpStatus.OK).body("The user is registered successfully The link has been sent to this email");
     }
 
@@ -68,9 +70,10 @@ public class UserController {
         throw new UserAddException("The user is not saved please check your input");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody User user) {
-        if(user.getEmail() == null) {
+        if (user.getEmail() == null) {
             user.setId(id);
             userService.updateUser(user);
             return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been updated");
@@ -78,15 +81,25 @@ public class UserController {
         throw new InvalidInputException("Please check your input");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been Deleted");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping()
     private ResponseEntity<String> deleteAll() {
-        userService.deleteAll();
-        return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
+        try {
+            int numberOfDeletion = userService.deleteAll();
+            if (numberOfDeletion > 0) {
+                return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body("ALl users are already deleted");
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
     }
 }
