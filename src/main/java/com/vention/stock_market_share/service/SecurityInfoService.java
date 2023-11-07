@@ -2,26 +2,18 @@ package com.vention.stock_market_share.service;
 
 import com.vention.stock_market_share.model.SecurityInfo;
 import com.vention.stock_market_share.repository.SecurityInfoRepository;
-import com.vention.stock_market_share.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SecurityInfoService {
-
     private final SecurityInfoRepository securityInfoRepository;
-    private final UserRepository userRepository;
 
-    @Autowired
-    public SecurityInfoService(SecurityInfoRepository securityInfoRepository, UserRepository userRepository) {
-        this.securityInfoRepository = securityInfoRepository;
-        this.userRepository = userRepository;
-    }
-
-    public void createSecurityInfo(SecurityInfo securityInfo, long userId) {
-        securityInfoRepository.save(securityInfo, userId);
+    public boolean createSecurityInfo(SecurityInfo securityInfo, long userId) {
+        return securityInfoRepository.save(securityInfo, userId);
     }
 
     public SecurityInfo getSecurityInfoById(Long id) {
@@ -40,7 +32,7 @@ public class SecurityInfoService {
         }
     }
 
-    public String findByUsername(String username){
+    public SecurityInfo findByUsername(String username) {
         return securityInfoRepository.findByUsername(username);
     }
 
@@ -48,10 +40,7 @@ public class SecurityInfoService {
         securityInfoRepository.delete(id);
     }
 
-    public boolean isValid(SecurityInfo securityInfo){
+    public boolean isValid(SecurityInfo securityInfo) {
         return securityInfoRepository.isValidInput(securityInfo);
     }
-
-
-
 }

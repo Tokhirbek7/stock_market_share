@@ -1,4 +1,4 @@
-package com.vention.stock_market_share.request;
+package com.vention.stock_market_share.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

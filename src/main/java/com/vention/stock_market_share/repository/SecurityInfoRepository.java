@@ -1,7 +1,9 @@
 package com.vention.stock_market_share.repository;
 
 import com.vention.stock_market_share.model.SecurityInfo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -10,9 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
+@Slf4j
 public class SecurityInfoRepository {
-    @Autowired
-    private DataSource dataSource;
+    private final DataSource dataSource;
+    private final PasswordEncoder passwordEncoder;
     private final String SQL_SAVE = "INSERT INTO security_info (username, password, user_id) VALUES (?, ?, ?)";
     private final String SQL_FIND_BY_ID = "SELECT * FROM security_info WHERE id = ?";
     private final String SQL_FIND_BY_USERNAME = "SELECT * FROM security_info WHERE username = ?";
@@ -20,26 +24,25 @@ public class SecurityInfoRepository {
     private final String DELETE_BY_ID = "DELETE FROM security_info WHERE id = ?";
     private final String UPDATE_BY_ID = "UPDATE security_info SET username = ?, password = ? WHERE user_id = ?";
 
-    public void save(SecurityInfo securityInfo, Long userId) {
-        try (Connection connection = dataSource.getConnection()) {
+    public boolean save(SecurityInfo securityInfo, Long userId) {
+        int affected = 0;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_SAVE)) {
             connection.setAutoCommit(false);
 
-            try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_SAVE)) {
-                preparedStatement.setString(1, securityInfo.getUsername());
-                preparedStatement.setString(2, securityInfo.getPassword());
-                preparedStatement.setLong(3, userId);
-                preparedStatement.executeUpdate();
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                e.printStackTrace();
-            }
+            preparedStatement.setString(1, securityInfo.getUsername());
+            preparedStatement.setString(2, passwordEncoder.encode(securityInfo.getPassword()));
+            preparedStatement.setLong(3, userId);
+
+            affected = preparedStatement.executeUpdate();
+            connection.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error occurred while saving this" + securityInfo.getUserId() + "the database", e);
         }
+        return affected != 0;
     }
 
-    public String findByUsername(String username) {
+    public SecurityInfo findByUsername(String username) {
         SecurityInfo securityInfo = null;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_FIND_BY_USERNAME)) {
@@ -50,16 +53,10 @@ public class SecurityInfoRepository {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
-        if (securityInfo != null) {
-            return securityInfo.getUsername();
-        } else {
-            return "Username is not found";
-        }
-
+        return securityInfo;
     }
-
 
     public SecurityInfo findById(Long id) {
         SecurityInfo securityInfo = null;
@@ -72,7 +69,7 @@ public class SecurityInfoRepository {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("error occurred while retrieving security info by id " + id, e);
         }
         return securityInfo;
     }
@@ -87,11 +84,10 @@ public class SecurityInfoRepository {
                 securityInfo.add(securityInfoDTO);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error occurred while retrieving all security info", e);
         }
         return securityInfo;
     }
-
 
     public void update(SecurityInfo securityInfoDTO) {
         try (Connection connection = dataSource.getConnection();
@@ -101,7 +97,7 @@ public class SecurityInfoRepository {
             preparedStatement.setLong(3, securityInfoDTO.getId());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error occurred while updating security info", e);
         }
     }
 
@@ -111,15 +107,13 @@ public class SecurityInfoRepository {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("error occurred while deleting the security info by this id " + id, e);
         }
     }
 
     public boolean isValidInput(SecurityInfo securityInfo) {
         return securityInfo.getUsername() != null
                 && securityInfo.getPassword() != null;
-
-
     }
 
     private SecurityInfo mapRowToSecurityInfo(ResultSet resultSet) throws SQLException {

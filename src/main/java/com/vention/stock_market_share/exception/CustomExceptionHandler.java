@@ -7,27 +7,40 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class CustomExceptionHandler extends Exception {
+
+    @ExceptionHandler(DataNotFoundException.class)
+    public ResponseEntity<String> dataNotFoundException(DataNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
     @ExceptionHandler(MissingEmailException.class)
-    public ResponseEntity<String> handleMissingEmailException(MissingEmailException ex) {
+    public ResponseEntity<String> missingEmailException(MissingEmailException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<String> handleDuplicateEmailException(DuplicateEmailException ex) {
+    public ResponseEntity<String> duplicateEmailException(DuplicateEmailException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     @ExceptionHandler(UserAddException.class)
-    public ResponseEntity<String> hadleUserAddException(UserAddException ex){
+    public ResponseEntity<String> userAddException(UserAddException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
     @ExceptionHandler(InvalidInputException.class)
-    public ResponseEntity<String> handleInvalidInputException(InvalidInputException ex){
+    public ResponseEntity<String> invalidInputException(InvalidInputException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
     @ExceptionHandler(TwelveDataApiException.class)
-    public ResponseEntity<Object> handleAlphaVantageApiException(TwelveDataApiException ex) {
-        String errorMessage = "An error occurred while interacting with the AlphaVantage API.";
+    public ResponseEntity<String> twelweDataApiException() {
+        String errorMessage = "An error occurred while interacting with the TwelveDateAPi API.";
         return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(UserUpdateException.class)
+    public ResponseEntity<String> userUpdateException(UserUpdateException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 }

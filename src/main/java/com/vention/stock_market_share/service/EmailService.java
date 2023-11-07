@@ -2,6 +2,7 @@ package com.vention.stock_market_share.service;
 
 import com.vention.stock_market_share.model.Stock;
 import com.vention.stock_market_share.model.User;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -13,30 +14,25 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailService {
     private final JavaMailSender mailSender;
     public final UserFavoriteStockService userFavoriteStockService;
-
-    public EmailService(JavaMailSender mailSender, UserFavoriteStockService userFavoriteStockService) {
-        this.mailSender = mailSender;
-        this.userFavoriteStockService = userFavoriteStockService;
-    }
-
     @Value("${spring.mail.username}")
     private String fromMail;
 
-    public String sendMailWithLink(String to, String link) {
+    public boolean sendMailWithLink(String to, String token, String url) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromMail);
             message.setTo(to);
             message.setSubject("Registration Confirmation");
-            message.setText("Click the following link to confirm your registration: " + link);
+            message.setText("Here is url for creating the username and password: " + url + " Use this token to complete registration: " + token);
             mailSender.send(message);
-            return "mail sent";
+            return true;
         } catch (Exception e) {
             log.error("An error occurred while sending the email", e);
-            return "failed to send mail";
+            return false;
         }
     }
 
@@ -86,6 +82,4 @@ public class EmailService {
             log.error("An error occurred while sending the email", e);
         }
     }
-
-
 }
