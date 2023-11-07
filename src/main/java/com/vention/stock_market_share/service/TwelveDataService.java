@@ -3,17 +3,15 @@ package com.vention.stock_market_share.service;
 import com.vention.stock_market_share.exception.TwelveDataApiException;
 import com.vention.stock_market_share.interfaces.TwelveApiClient;
 import com.vention.stock_market_share.response.TwelveDataApiResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class TwelveDataService {
     private final TwelveApiClient twelveApiClient;
-
-    public TwelveDataService(TwelveApiClient twelveApiClient) {
-        this.twelveApiClient = twelveApiClient;
-    }
 
     public TwelveDataApiResponse searchStockBySymbol(String symbol) {
         try {

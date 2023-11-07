@@ -1,35 +1,29 @@
 package com.vention.stock_market_share.controller;
 
-import com.vention.stock_market_share.exception.DuplicateEmailException;
 import com.vention.stock_market_share.exception.InvalidInputException;
 import com.vention.stock_market_share.model.SecurityInfo;
 import com.vention.stock_market_share.service.SecurityInfoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
+
+import static com.vention.stock_market_share.controller.AuthenticationController.getHttpStatusResponseEntity;
 
 @RestController
 @RequestMapping("/security")
+@RequiredArgsConstructor
 public class SecurityInfoController {
-
     private final SecurityInfoService securityInfoService;
 
-    public SecurityInfoController(SecurityInfoService securityInfoService) {
-        this.securityInfoService = securityInfoService;
-    }
     @PostMapping("/{userId}")
-    public ResponseEntity<String> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
+    public ResponseEntity<HttpStatus> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
         if (!securityInfoService.isValid(securityInfo)) {
             throw new InvalidInputException("Please check your input");
         }
-        if (Objects.equals(securityInfoService.findByUsername(securityInfo.getUsername()), securityInfo.getUsername())) {
-            throw new DuplicateEmailException("This email is already registered.");
-        }
-        securityInfoService.createSecurityInfo(securityInfo, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Created");
+        return getHttpStatusResponseEntity(userId, securityInfo, securityInfoService);
     }
 
     @GetMapping("/{id}")
@@ -37,7 +31,7 @@ public class SecurityInfoController {
         return ResponseEntity.status(HttpStatus.OK).body(securityInfoService.getSecurityInfoById(id));
     }
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<List<SecurityInfo>> getAllSecurityInfo() {
         return ResponseEntity.status(HttpStatus.OK).body(securityInfoService.getAllSecurityInfo());
     }

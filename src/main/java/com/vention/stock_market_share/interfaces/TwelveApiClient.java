@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface TwelveApiClient {
     @GetMapping("/stocks")
     TwelveDataApiResponse searchStockBySymbol(@RequestParam("symbol") String symbol);
+
     @GetMapping("/stocks")
     TwelveDataApiResponse searchAllStocks(@RequestParam("exchange") String exchange);
 }

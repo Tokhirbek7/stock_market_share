@@ -2,6 +2,7 @@ package com.vention.stock_market_share.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 @NoArgsConstructor
 @Data
 public class UserFavoriteStock {

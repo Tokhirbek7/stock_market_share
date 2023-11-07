@@ -3,6 +3,7 @@ package com.vention.stock_market_share.service;
 import com.vention.stock_market_share.model.Stock;
 import com.vention.stock_market_share.repository.StockDataRepository;
 import com.vention.stock_market_share.response.TwelveDataApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -11,14 +12,10 @@ import java.util.Date;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class DailyStockUpdaterService {
     private final TwelveDataService twelveDataService;
     private final StockDataRepository stockDataRepository;
-
-    public DailyStockUpdaterService(TwelveDataService twelveDataService, StockDataRepository stockDataRepository) {
-        this.twelveDataService = twelveDataService;
-        this.stockDataRepository = stockDataRepository;
-    }
 
     @Scheduled(cron = "0 0 0 * * *")
     public void dailyUpdateAllStockData() {

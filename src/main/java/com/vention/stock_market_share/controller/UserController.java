@@ -1,14 +1,11 @@
 package com.vention.stock_market_share.controller;
 
-import com.vention.stock_market_share.exception.DuplicateEmailException;
-import com.vention.stock_market_share.exception.InvalidInputException;
-import com.vention.stock_market_share.exception.MissingEmailException;
+import com.vention.stock_market_share.exception.DataNotFoundException;
 import com.vention.stock_market_share.exception.UserAddException;
 import com.vention.stock_market_share.model.User;
-import com.vention.stock_market_share.service.EmailService;
 import com.vention.stock_market_share.service.UserService;
-import com.vention.stock_market_share.token.RegistrationTokenGenerator;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,87 +16,82 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
+@Slf4j
+@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 public class UserController {
-
-
     private final UserService userService;
-    private final EmailService emailService;
-    private final RegistrationTokenGenerator tokenGenerator;
-    @Value("${registration.link}")
-    private String basicLink;
 
-    public UserController(UserService userService, EmailService emailService, RegistrationTokenGenerator tokenGenerator) {
-        this.userService = userService;
-        this.emailService = emailService;
-        this.tokenGenerator = tokenGenerator;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody User user) {
-        if (user.getEmail() == null) {
-            throw new MissingEmailException("Please check your input");
-        }
-        User byEmail = userService.findByEmail(user.getEmail());
-        if (byEmail.getEmail().equals(user.getEmail())) {
-            throw new DuplicateEmailException("This email is already registered.");
-        }
-        long userId = userService.registerUser(user);
-        String token = tokenGenerator.generateToken();
-        String registrationLink = basicLink + token + userId;
-        emailService.sendMailWithLink(user.getEmail(), registrationLink);
-        return ResponseEntity.status(HttpStatus.OK).body("The user is registered successfully The link has been sent to this email");
-    }
-
+    @PreAuthorize("hasAnyAuthority('admin:read', 'user:read')")
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers());
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            List<User> allUsers = userService.getAllUsers();
+            return ResponseEntity.status(HttpStatus.OK).body(allUsers);
+        } catch (DataNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No users found: " + ex.getMessage());
+        }
     }
 
+    @PreAuthorize("hasAnyAuthority('admin:read', 'user:read')")
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getUserById(id));
+    public ResponseEntity<HttpStatus> getUserById(@PathVariable Long id) {
+        User userById = userService.getUserById(id);
+        if (userById == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        if (Objects.equals(userService.getUserById(id).getId(), id)) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+
     }
 
+
+    @PreAuthorize("hasAuthority('admin:create')")
     @PostMapping
-    public ResponseEntity<String> addUser(@RequestBody User user) {
+    public ResponseEntity<HttpStatus> addUser(@RequestBody User user) {
         long savedUserId = userService.addUser(user);
         if (savedUserId != 0) {
-            return ResponseEntity.status(HttpStatus.CREATED).body("The user is added successfully");
+            return new ResponseEntity<>(HttpStatus.CREATED);
         }
-
-        throw new UserAddException("The user is not saved please check your input");
+        throw new UserAddException("The user " + user.getFirstname() + " is not saved. Please check your input.");
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('admin:update', 'user:update')")
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody User user) {
-        if (user.getEmail() == null) {
-            user.setId(id);
-            userService.updateUser(user);
-            return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been updated");
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
+        try {
+            if (Objects.equals(userService.getUserById(id).getId(), id)) {
+                user.setId(id);
+                userService.updateUser(user);
+                return new ResponseEntity<>(HttpStatus.ACCEPTED);
+            } else {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+        } catch (UserAddException ex) {
+            log.error(ex.getMessage());
         }
-        throw new InvalidInputException("Please check your input");
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('admin:delete', 'user:delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been Deleted");
+        if (Objects.equals(userService.getUserById(id).getId(), id))
+            if (userService.deleteUser(id)) {
+                return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been Deleted");
+            }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The user with this " + id + " not found");
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping()
-    private ResponseEntity<String> deleteAll() {
-        try {
-            int numberOfDeletion = userService.deleteAll();
-            if (numberOfDeletion > 0) {
-                return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
-            }
-            return ResponseEntity.status(HttpStatus.OK).body("ALl users are already deleted");
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-
+    @PreAuthorize("hasAuthority('admin:delete')")
+    @DeleteMapping
+    private ResponseEntity<?> deleteAll() {
+        int numberOfDeletion = userService.deleteAll();
+        if (numberOfDeletion > 0) {
+            return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
         }
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -21,5 +21,4 @@ public class Stock {
     private String country;
     private String type;
     private Date date;
-
 }
