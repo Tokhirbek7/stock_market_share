@@ -24,20 +24,16 @@ public class SecurityInfoService {
         return securityInfoRepository.findAll();
     }
 
-    public void updateSecurityInfo(Long id, SecurityInfo securityInfoDTO) {
-        SecurityInfo existingSecurityInfo = securityInfoRepository.findById(id);
-        if (existingSecurityInfo != null) {
-            securityInfoDTO.setId(id);
-            securityInfoRepository.update(securityInfoDTO);
-        }
+    public boolean updateSecurityInfo(Long id, SecurityInfo securityInfoDTO) {
+        return securityInfoRepository.update(id, securityInfoDTO);
     }
 
     public SecurityInfo findByUsername(String username) {
         return securityInfoRepository.findByUsername(username);
     }
 
-    public void deleteSecurityInfo(Long id) {
-        securityInfoRepository.delete(id);
+    public boolean deleteSecurityInfo(Long userId) {
+        return securityInfoRepository.delete(userId);
     }
 
     public boolean isValid(SecurityInfo securityInfo) {

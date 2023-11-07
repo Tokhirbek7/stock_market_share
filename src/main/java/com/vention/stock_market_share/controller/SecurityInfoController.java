@@ -2,13 +2,14 @@ package com.vention.stock_market_share.controller;
 
 import com.vention.stock_market_share.exception.InvalidInputException;
 import com.vention.stock_market_share.model.SecurityInfo;
+import com.vention.stock_market_share.service.AuthenticationService;
 import com.vention.stock_market_share.service.SecurityInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Objects;
 
 import static com.vention.stock_market_share.controller.AuthenticationController.getHttpStatusResponseEntity;
 
@@ -17,6 +18,7 @@ import static com.vention.stock_market_share.controller.AuthenticationController
 @RequiredArgsConstructor
 public class SecurityInfoController {
     private final SecurityInfoService securityInfoService;
+    private final AuthenticationService authenticationService;
 
     @PostMapping("/{userId}")
     public ResponseEntity<HttpStatus> createSecurityInfo(@PathVariable Long userId, @RequestBody SecurityInfo securityInfo) {
@@ -27,27 +29,34 @@ public class SecurityInfoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SecurityInfo> getSecurityInfoById(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(securityInfoService.getSecurityInfoById(id));
+    public ResponseEntity<?> getSecurityInfoById(@PathVariable Long id) {
+        if (Objects.equals(authenticationService.getCurrentUserId(), id)) {
+            SecurityInfo securityInfoById = securityInfoService.getSecurityInfoById(id);
+            return securityInfoById == null ? new ResponseEntity<>(HttpStatus.NOT_FOUND) : ResponseEntity.status(HttpStatus.OK).body(securityInfoById);
+        }
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
-    @GetMapping
-    public ResponseEntity<List<SecurityInfo>> getAllSecurityInfo() {
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllSecurityInfo() {
         return ResponseEntity.status(HttpStatus.OK).body(securityInfoService.getAllSecurityInfo());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateSecurityInfo(@PathVariable Long id, @RequestBody SecurityInfo securityInfo) {
-        if (securityInfoService.isValid(securityInfo)) {
-            securityInfoService.updateSecurityInfo(id, securityInfo);
-            return ResponseEntity.status(HttpStatus.OK).body("Updated successfully");
+    public ResponseEntity<?> updateSecurityInfo(@PathVariable Long id, @RequestBody SecurityInfo securityInfo) {
+        if (Objects.equals(authenticationService.getCurrentUserId(), id)) {
+            if (securityInfoService.isValid(securityInfo)) {
+                boolean isUpdated = securityInfoService.updateSecurityInfo(id, securityInfo);
+                return isUpdated ? ResponseEntity.status(HttpStatus.OK).body("Updated successfully") : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please check your input");
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteSecurityInfo(@PathVariable Long id) {
-        securityInfoService.deleteSecurityInfo(id);
-        return ResponseEntity.status(HttpStatus.OK).body("A user has been Deleted");
+    public ResponseEntity<?> deleteSecurityInfoById(@PathVariable Long id) {
+        boolean isDeleted = securityInfoService.deleteSecurityInfo(id);
+        return isDeleted ? ResponseEntity.status(HttpStatus.OK).body("A user has been Deleted") : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

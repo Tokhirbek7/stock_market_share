@@ -21,6 +21,7 @@ public class TwelveDataService {
             return null;
         }
     }
+
     public TwelveDataApiResponse searchAllStocks() {
         try {
             final String exchange = "NASDAQ";

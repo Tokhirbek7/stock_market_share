@@ -18,10 +18,10 @@ public class SecurityInfoRepository {
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final String SQL_SAVE = "INSERT INTO security_info (username, password, user_id) VALUES (?, ?, ?)";
-    private final String SQL_FIND_BY_ID = "SELECT * FROM security_info WHERE id = ?";
+    private final String SQL_FIND_BY_ID = "SELECT * FROM security_info WHERE user_id = ?";
     private final String SQL_FIND_BY_USERNAME = "SELECT * FROM security_info WHERE username = ?";
     private final String FIND_ALL = "SELECT * FROM security_info";
-    private final String DELETE_BY_ID = "DELETE FROM security_info WHERE id = ?";
+    private final String DELETE_BY_ID = "DELETE FROM security_info WHERE user_id = ?";
     private final String UPDATE_BY_ID = "UPDATE security_info SET username = ?, password = ? WHERE user_id = ?";
 
     public boolean save(SecurityInfo securityInfo, Long userId) {
@@ -89,26 +89,30 @@ public class SecurityInfoRepository {
         return securityInfo;
     }
 
-    public void update(SecurityInfo securityInfoDTO) {
+    public boolean update(Long id, SecurityInfo securityInfoDTO) {
+        int affectedRow = -1;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_BY_ID)) {
             preparedStatement.setString(1, securityInfoDTO.getUsername());
-            preparedStatement.setString(2, securityInfoDTO.getPassword());
-            preparedStatement.setLong(3, securityInfoDTO.getId());
-            preparedStatement.executeUpdate();
+            preparedStatement.setString(2, passwordEncoder.encode(securityInfoDTO.getPassword()));
+            preparedStatement.setLong(3, id);
+            affectedRow = preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error("Error occurred while updating security info", e);
         }
+        return affectedRow > 0;
     }
 
-    public void delete(Long id) {
+    public boolean delete(Long userId) {
+        int affectedRow = -1;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(DELETE_BY_ID)) {
-            preparedStatement.setLong(1, id);
-            preparedStatement.executeUpdate();
+            preparedStatement.setLong(1, userId);
+            affectedRow = preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            log.error("error occurred while deleting the security info by this id " + id, e);
+            log.error("error occurred while deleting the security info by this user_id " + userId, e);
         }
+        return affectedRow > 0;
     }
 
     public boolean isValidInput(SecurityInfo securityInfo) {

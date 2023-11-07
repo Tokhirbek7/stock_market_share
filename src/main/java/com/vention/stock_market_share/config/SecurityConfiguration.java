@@ -9,7 +9,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,14 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static com.vention.stock_market_share.enums.Permission.*;
 import static com.vention.stock_market_share.enums.Role.ADMIN;
 import static com.vention.stock_market_share.enums.Role.USER;
 import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+//@EnableMethodSecurity
 public class SecurityConfiguration {
     @Autowired
     private UserRepository userRepository;
@@ -42,16 +40,14 @@ public class SecurityConfiguration {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/register", "/authenticate", "/refresh", "/create/**").permitAll()
+                        .requestMatchers(DELETE, "/users/**").hasRole(ADMIN.name())
+                        .requestMatchers("/users/**").hasAnyRole(ADMIN.name(), USER.name())
+                        .requestMatchers(GET, "/security/all").hasRole(ADMIN.name())
+                        .requestMatchers(DELETE, "/security/**").hasRole(ADMIN.name())
                         .requestMatchers("/security/**").hasAnyRole(ADMIN.name(), USER.name())
-                        .requestMatchers(GET, "/security/**").hasAnyAuthority(ADMIN_READ.name(), USER_READ.name())
-                        .requestMatchers(DELETE, "/security/**").hasAnyAuthority(ADMIN_DELETE.name(), USER_UPDATE_BY_ID.name())
-                        .requestMatchers(PUT, "/security/**").hasAnyAuthority(ADMIN_UPDATE.name(), USER_UPDATE_BY_ID.name())
-                        .requestMatchers(POST, "/security/**").hasAuthority(ADMIN_CREATE.name())
-                        .requestMatchers("/stocks/**").hasAnyRole(ADMIN_READ.name(), USER_READ.name())
-                        .requestMatchers(GET, "/stocks/**").hasAnyAuthority(ADMIN_READ.name(), USER_READ.name())
+                        .requestMatchers(GET, "/stocks/**").hasAnyRole(ADMIN.name(), USER.name())
+                        .requestMatchers(POST, "/stocks/**").hasAnyRole(ADMIN.name(), USER.name())
                         .requestMatchers("/stocks/**").hasAnyRole(ADMIN.name(), USER.name())
-                        .requestMatchers(GET, "/stocks/**").hasAnyAuthority(ADMIN_READ.name(), USER_READ.name())
-                        .requestMatchers(POST, "/stocks/**").hasAnyAuthority(ADMIN_CREATE.name(), USER_CREATE.name())
                         .anyRequest()
                         .authenticated())
                 .csrf(AbstractHttpConfigurer::disable)

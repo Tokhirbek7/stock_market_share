@@ -11,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,10 +48,6 @@ public class UserFavoriteStockService {
         return userFavoriteStockRepository.getAllUsersWhoLikedStocks();
     }
 
-    public List<Stock> getStocksByDateAndSymbol(String symbol, Date date) {
-        return stockDataRepository.getStocksByDateAndSymbol(symbol, date);
-    }
-
     private boolean allStocksExist(List<Long> stockIds) {
         List<Stock> stockList = new ArrayList<>();
         for (Long stockId : stockIds) {
@@ -70,15 +63,5 @@ public class UserFavoriteStockService {
     private boolean userExists(Long userId) {
         User byId = userRepository.findById(userId);
         return byId != null;
-    }
-
-    public Date parseDate(String date) {
-        try {
-            LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ISO_DATE);
-            return java.sql.Date.valueOf(localDate);
-        } catch (Exception e) {
-            log.error("Error parsing date: " + date, e);
-            return null;
-        }
     }
 }
