@@ -44,11 +44,11 @@ public class UserService implements UserDetailsService {
     }
 
     public boolean deleteUser(Long id) {
-        return repository.delete(id) == 1;
+        return repository.delete(id);
     }
 
-    public int deleteAll() {
-        return repository.deleteAll();
+    public boolean deleteAll() {
+        return repository.deleteAll() > 0;
     }
 
     public long registerUser(User user) {

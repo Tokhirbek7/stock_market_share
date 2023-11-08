@@ -4,6 +4,7 @@ import com.vention.stock_market_share.model.Stock;
 import com.vention.stock_market_share.repository.StockDataRepository;
 import com.vention.stock_market_share.response.TwelveDataApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -11,13 +12,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DailyStockUpdaterService {
     private final TwelveDataService twelveDataService;
     private final StockDataRepository stockDataRepository;
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 17 17 * * *")
     public void dailyUpdateAllStockData() {
         TwelveDataApiResponse twelveDataApiResponse = twelveDataService.searchAllStocks();
         List<TwelveDataApiResponse.StockData> data = twelveDataApiResponse.getData();
@@ -38,5 +41,9 @@ public class DailyStockUpdaterService {
         for (Stock value : stockList) {
             stockDataRepository.save(value);
         }
+    }
+
+    public List<Stock> getStocksByDateAndSymbol(String symbol, Date date) {
+        return stockDataRepository.getStocksByDateAndSymbol(symbol, date);
     }
 }

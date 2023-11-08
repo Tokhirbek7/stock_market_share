@@ -3,12 +3,12 @@ package com.vention.stock_market_share.controller;
 import com.vention.stock_market_share.exception.DataNotFoundException;
 import com.vention.stock_market_share.exception.UserAddException;
 import com.vention.stock_market_share.model.User;
+import com.vention.stock_market_share.service.AuthenticationService;
 import com.vention.stock_market_share.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,12 +18,11 @@ import java.util.Objects;
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 public class UserController {
     private final UserService userService;
+    private final AuthenticationService authenticationService;
 
-    @PreAuthorize("hasAnyAuthority('admin:read', 'user:read')")
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<?> getAllUsers() {
         try {
             List<User> allUsers = userService.getAllUsers();
@@ -33,7 +32,6 @@ public class UserController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('admin:read', 'user:read')")
     @GetMapping("/{id}")
     public ResponseEntity<HttpStatus> getUserById(@PathVariable Long id) {
         User userById = userService.getUserById(id);
@@ -47,8 +45,6 @@ public class UserController {
 
     }
 
-
-    @PreAuthorize("hasAuthority('admin:create')")
     @PostMapping
     public ResponseEntity<HttpStatus> addUser(@RequestBody User user) {
         long savedUserId = userService.addUser(user);
@@ -58,14 +54,13 @@ public class UserController {
         throw new UserAddException("The user " + user.getFirstname() + " is not saved. Please check your input.");
     }
 
-    @PreAuthorize("hasAnyAuthority('admin:update', 'user:update')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
         try {
-            if (Objects.equals(userService.getUserById(id).getId(), id)) {
+            if (Objects.equals(authenticationService.getCurrentUserId(), id)) {
                 user.setId(id);
-                userService.updateUser(user);
-                return new ResponseEntity<>(HttpStatus.ACCEPTED);
+                boolean isUpdated = userService.updateUser(user);
+                return isUpdated ? new ResponseEntity<>(HttpStatus.ACCEPTED) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             } else {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
             }
@@ -75,23 +70,22 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @PreAuthorize("hasAnyAuthority('admin:delete', 'user:delete')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        if (Objects.equals(userService.getUserById(id).getId(), id))
+    public ResponseEntity<String> deleteUserById(@PathVariable Long id) {
+        if (Objects.equals(authenticationService.getCurrentUserId(), id)) {
             if (userService.deleteUser(id)) {
                 return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been Deleted");
             }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The user with this " + id + " not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The user with this " + id + " not found");
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("The user with id: " + authenticationService.getCurrentUserId() + " does not have permission");
     }
 
-    @PreAuthorize("hasAuthority('admin:delete')")
     @DeleteMapping
     private ResponseEntity<?> deleteAll() {
-        int numberOfDeletion = userService.deleteAll();
-        if (numberOfDeletion > 0) {
+        if (userService.deleteAll()) {
             return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
         }
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error occurred while deleting all users");
     }
 }

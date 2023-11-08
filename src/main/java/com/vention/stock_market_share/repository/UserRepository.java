@@ -22,10 +22,9 @@ public class UserRepository {
     private final String SQL_GET_BY_EMAIL = "SELECT * FROM Users WHERE email = ?";
     private final String SQL_GET_BY_ID = "SELECT * FROM Users WHERE id = ?";
     private final String SQL_INSERT = "INSERT INTO Users (firstname, lastname, email, age, role) VALUES (?, ?, ?, ?, ?) RETURNING id";
-    private final String SQL_UPDATE = "UPDATE Users SET firstname = ?, lastname = ?, email = ?, age = ?, role = ? WHERE id = ?";
+    private final String SQL_UPDATE = "UPDATE Users SET firstname = ?, lastname = ?, email = ?, age = ?, role=? WHERE id = ?";
     private final String SQL_DELETE_BY_ID = "DELETE FROM Users WHERE id = ?";
-    private final String DELETE_ALL = "DELETE FROM Users";
-    private final String FIND_BY_ROLE = "SELECT * FROM USERS WHERE role = ?";
+    private final String DELETE_ALL = "delete  from users where role = 'USER'";
 
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
@@ -65,7 +64,7 @@ public class UserRepository {
                 preparedStatement.setString(2, user.getLastname());
                 preparedStatement.setString(3, user.getEmail());
                 preparedStatement.setInt(4, user.getAge());
-                preparedStatement.setString(5, user.getRole().name());
+                preparedStatement.setString(5, Role.USER.name());
                 int affectedRows = preparedStatement.executeUpdate();
                 long id = 0;
                 if (affectedRows == 1) {
@@ -79,13 +78,13 @@ public class UserRepository {
                 return user.getId();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
         return 0;
     }
 
     public boolean update(User user) {
-        int affectedRow = 0;
+        int affectedRow = -1;
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE)) {
@@ -93,7 +92,8 @@ public class UserRepository {
                 preparedStatement.setString(2, user.getLastname());
                 preparedStatement.setString(3, user.getEmail());
                 preparedStatement.setInt(4, user.getAge());
-                preparedStatement.setLong(5, user.getId());
+                preparedStatement.setString(5, Role.USER.name());
+                preparedStatement.setLong(6, user.getId());
                 affectedRow = preparedStatement.executeUpdate();
                 connection.commit();
             } catch (SQLException e) {
@@ -106,7 +106,7 @@ public class UserRepository {
         return affectedRow != 0;
     }
 
-    public int delete(Long id) {
+    public boolean delete(Long id) {
         int affectedRows = -1;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_BY_ID)) {
@@ -115,7 +115,7 @@ public class UserRepository {
         } catch (SQLException e) {
             log.error("error occurred while deleting the user" + ": " + e.getMessage());
         }
-        return affectedRows;
+        return affectedRows > 0;
     }
 
     public int deleteAll() {
@@ -124,7 +124,6 @@ public class UserRepository {
             return statement.executeUpdate(DELETE_ALL);
         } catch (SQLException e) {
             log.error("error occurred while deleting all of the users" + ": " + e.getMessage());
-            e.printStackTrace();
         }
         return 0;
     }

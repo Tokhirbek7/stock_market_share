@@ -64,4 +64,14 @@ public class AuthenticationService {
         }
         return null;
     }
+
+    public Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            if (authentication.getPrincipal() instanceof UserDto user) {
+                return user.getId();
+            }
+        }
+        return null;
+    }
 }

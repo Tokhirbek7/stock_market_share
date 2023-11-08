@@ -66,7 +66,6 @@ public class EmailService {
             }
         }
         content.append("Thank you for using our stock information service.\n");
-
         return content.toString();
     }
 
