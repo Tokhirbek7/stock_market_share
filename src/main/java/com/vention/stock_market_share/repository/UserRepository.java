@@ -17,14 +17,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserRepository {
     private final DataSource dataSource;
-    private static final String SQL_GET_BY_USERNAME = "SELECT u.id, u.firstname, u.lastname, u.email, u.age, u.role, s.password, s.username FROM USERS u join SECURITY_INFO s ON s.user_id = u.id where s.username = ?";
+    private static final String SQL_GET_BY_USERNAME = "SELECT u.id, u.firstname, u.lastname, u.email, u.age, u.role, s.password, s.username, u.isverified FROM USERS u join SECURITY_INFO s ON s.user_id = u.id where s.username = ?";
     private final String SQL_GET_ALL = "SELECT * FROM USERS";
     private final String SQL_GET_BY_EMAIL = "SELECT * FROM Users WHERE email = ?";
     private final String SQL_GET_BY_ID = "SELECT * FROM Users WHERE id = ?";
-    private final String SQL_INSERT = "INSERT INTO Users (firstname, lastname, email, age, role) VALUES (?, ?, ?, ?, ?) RETURNING id";
+    private final String SQL_INSERT = "INSERT INTO Users (firstname, lastname, email, age, role, isVerified) VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
     private final String SQL_UPDATE = "UPDATE Users SET firstname = ?, lastname = ?, email = ?, age = ?, role=? WHERE id = ?";
     private final String SQL_DELETE_BY_ID = "DELETE FROM Users WHERE id = ?";
     private final String DELETE_ALL = "delete  from users where role = 'USER'";
+    private final String GET_CODE_BY_EMAIL = "select c.code from code c where email = ? order by c.code asc limit 1";
+    private final String SQL_UPDATE_USER_VERIFIED = "UPDATE users SET isVerified = true where email = ?";
 
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
@@ -65,6 +67,7 @@ public class UserRepository {
                 preparedStatement.setString(3, user.getEmail());
                 preparedStatement.setInt(4, user.getAge());
                 preparedStatement.setString(5, Role.USER.name());
+                preparedStatement.setBoolean(6, false);
                 int affectedRows = preparedStatement.executeUpdate();
                 long id = 0;
                 if (affectedRows == 1) {
@@ -136,6 +139,7 @@ public class UserRepository {
         user.setEmail(resultSet.getString("email"));
         user.setAge(resultSet.getInt("age"));
         user.setRole(Role.valueOf(resultSet.getString("role")));
+        user.setVerified(resultSet.getBoolean("isVerified"));
         return user;
     }
 
@@ -149,6 +153,7 @@ public class UserRepository {
         userDto.setRole(Role.valueOf(resultSet.getString("role")));
         userDto.setUsername(resultSet.getString("username"));
         userDto.setPassword(resultSet.getString("password"));
+        userDto.setVerified(resultSet.getBoolean("isVerified"));
         return userDto;
     }
 
@@ -167,21 +172,15 @@ public class UserRepository {
         return null;
     }
 
-    public long registerUser(User request) {
+    public long registerUser(UserDto userDto) {
         long userId = -1;
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            User user = new User();
-            user.setFirstname(request.getFirstname());
-            user.setLastname(request.getLastname());
-            user.setEmail(request.getEmail());
-            user.setAge(request.getAge());
-            user.setRole(Role.USER);
-            userId = save(user);
-            connection.commit();
-        } catch (SQLException e) {
-            log.error("error occurred while retrieving the user");
-        }
+        User user = new User();
+        user.setFirstname(userDto.getFirstname());
+        user.setLastname(userDto.getLastname());
+        user.setEmail(userDto.getEmail());
+        user.setAge(userDto.getAge());
+        user.setRole(Role.USER);
+        userId = save(user);
         return userId;
     }
 
@@ -198,5 +197,31 @@ public class UserRepository {
             log.error("error occurred while retrieving the user by email");
         }
         return null;
+    }
+
+    public String getCodeByEmail(String email) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(GET_CODE_BY_EMAIL)) {
+            preparedStatement.setString(1, email);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getString("code");
+            }
+        } catch (SQLException e) {
+            log.error("error occurred while retrieving the code via this email " + email, e.getMessage());
+        }
+        return null;
+    }
+
+    public boolean updateUserSetIsVerifiedToTrue(User user) {
+        int affectedRow = -1;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_USER_VERIFIED)) {
+            preparedStatement.setString(1, user.getEmail());
+            affectedRow = preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            log.error(ex.getMessage());
+        }
+        return affectedRow != 0;
     }
 }

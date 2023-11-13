@@ -26,7 +26,6 @@ import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
-//@EnableMethodSecurity
 public class SecurityConfiguration {
     @Autowired
     private UserRepository userRepository;
@@ -39,8 +38,9 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/register", "/authenticate", "/refresh", "/create/**").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/register", "/authenticate", "/refresh", "/verify").permitAll()
                         .requestMatchers(DELETE, "/users/**").hasRole(ADMIN.name())
+                        .requestMatchers(GET, "/users/all").hasRole(ADMIN.name())
                         .requestMatchers("/users/**").hasAnyRole(ADMIN.name(), USER.name())
                         .requestMatchers(GET, "/security/all").hasRole(ADMIN.name())
                         .requestMatchers(DELETE, "/security/**").hasRole(ADMIN.name())

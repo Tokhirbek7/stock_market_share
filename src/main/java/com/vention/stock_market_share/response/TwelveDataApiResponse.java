@@ -15,7 +15,6 @@ import java.util.List;
 public class TwelveDataApiResponse {
     @JsonProperty("data")
     private List<StockData> data;
-
     @JsonProperty("status")
     private String status;
 

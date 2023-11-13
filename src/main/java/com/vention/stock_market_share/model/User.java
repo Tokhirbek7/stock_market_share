@@ -17,4 +17,5 @@ public class User {
     private String email;
     private int age;
     private Role role;
+    private boolean isVerified;
 }

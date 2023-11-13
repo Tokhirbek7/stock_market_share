@@ -1,5 +1,6 @@
 package com.vention.stock_market_share.service;
 
+import com.vention.stock_market_share.code.CodeService;
 import com.vention.stock_market_share.model.Stock;
 import com.vention.stock_market_share.model.User;
 import lombok.RequiredArgsConstructor;
@@ -18,16 +19,19 @@ import java.util.List;
 public class EmailService {
     private final JavaMailSender mailSender;
     public final UserFavoriteStockService userFavoriteStockService;
+    private final CodeService codeService;
     @Value("${spring.mail.username}")
     private String fromMail;
 
-    public boolean sendMailWithLink(String to, String token, String url) {
+    public boolean sendMailWithCode(String to) {
         try {
+            String generatedCode = codeService.generateCode();
+            codeService.save(generatedCode, to);
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromMail);
             message.setTo(to);
             message.setSubject("Registration Confirmation");
-            message.setText("Here is url for creating the username and password: " + url + " Use this token to complete registration: " + token);
+            message.setText("Please verify your email with this code: " + generatedCode);
             mailSender.send(message);
             return true;
         } catch (Exception e) {
@@ -42,8 +46,7 @@ public class EmailService {
         for (User user : users) {
             List<Stock> favoriteStocks = userFavoriteStockService.getFavoriteStocks(user.getId());
             String emailText = generateEmailContent(user, favoriteStocks);
-
-            sendEmail(user.getEmail(), "Information about liked stocks", emailText);
+            sendEmail(user.getEmail(), emailText);
         }
     }
 
@@ -69,12 +72,12 @@ public class EmailService {
         return content.toString();
     }
 
-    private void sendEmail(String to, String subject, String text) {
+    private void sendEmail(String to, String text) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromMail);
             message.setTo(to);
-            message.setSubject(subject);
+            message.setSubject("Information about liked stocks");
             message.setText(text);
             mailSender.send(message);
         } catch (Exception e) {

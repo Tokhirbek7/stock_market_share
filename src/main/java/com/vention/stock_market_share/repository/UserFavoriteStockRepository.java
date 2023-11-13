@@ -30,13 +30,14 @@ public class UserFavoriteStockRepository {
             "         group by u.id;";
     private final String SQL_COUNT_USER_STOCKS = "SELECT COUNT(*) FROM userfavoritestock WHERE user_id = ? AND stock_id = ?";
 
-    public void save(UserFavoriteStock favoriteStock) {
+    public boolean save(UserFavoriteStock favoriteStock) {
+        int affectedRow =-1;
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT)) {
                 preparedStatement.setLong(1, favoriteStock.getUserId());
                 preparedStatement.setLong(2, favoriteStock.getStockId());
-                preparedStatement.executeUpdate();
+                affectedRow = preparedStatement.executeUpdate();
                 connection.commit();
             } catch (SQLException e) {
                 log.error("error happened while saving to the database", e);
@@ -45,6 +46,7 @@ public class UserFavoriteStockRepository {
         } catch (SQLException e) {
             log.error("error happened while saving to the database", e);
         }
+        return affectedRow!=0;
     }
 
     public List<Stock> getFavoriteStocks(Long userId) {

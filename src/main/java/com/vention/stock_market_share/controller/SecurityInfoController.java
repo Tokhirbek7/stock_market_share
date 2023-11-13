@@ -1,5 +1,6 @@
 package com.vention.stock_market_share.controller;
 
+import com.vention.stock_market_share.exception.DuplicateEmailException;
 import com.vention.stock_market_share.exception.InvalidInputException;
 import com.vention.stock_market_share.model.SecurityInfo;
 import com.vention.stock_market_share.service.AuthenticationService;
@@ -10,8 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
-
-import static com.vention.stock_market_share.controller.AuthenticationController.getHttpStatusResponseEntity;
 
 @RestController
 @RequestMapping("/security")
@@ -25,7 +24,12 @@ public class SecurityInfoController {
         if (!securityInfoService.isValid(securityInfo)) {
             throw new InvalidInputException("Please check your input");
         }
-        return getHttpStatusResponseEntity(userId, securityInfo, securityInfoService);
+        SecurityInfo byUsername = securityInfoService.findByUsername(securityInfo.getUsername());
+        if (byUsername != null) {
+            throw new DuplicateEmailException("This email is already registered.");
+        }
+        boolean saved = securityInfoService.createSecurityInfo(securityInfo, userId);
+        return (saved) ? new ResponseEntity<>(HttpStatus.CREATED) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @GetMapping("/{id}")

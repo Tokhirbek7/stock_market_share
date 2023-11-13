@@ -6,6 +6,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+
+import static org.springframework.jdbc.datasource.DataSourceUtils.getConnection;
 
 @Configuration
 public class BeanConfig {
@@ -29,5 +32,10 @@ public class BeanConfig {
         dataSource.setUsername(dataSourceUsername);
         dataSource.setPassword(dataSourcePassword);
         return dataSource;
+    }
+
+    @Bean
+    public Connection connection(DataSource dataSource) {
+        return getConnection(dataSource);
     }
 }
