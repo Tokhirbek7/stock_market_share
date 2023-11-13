@@ -60,7 +60,7 @@ public class UserController {
             if (Objects.equals(authenticationService.getCurrentUserId(), id)) {
                 user.setId(id);
                 boolean isUpdated = userService.updateUser(user);
-                return isUpdated ? new ResponseEntity<>(HttpStatus.ACCEPTED) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                return isUpdated ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(HttpStatus.CONFLICT);
             } else {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
             }
@@ -71,10 +71,10 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUserById(@PathVariable Long id) {
+    public ResponseEntity<?> deleteUserById(@PathVariable Long id) {
         if (Objects.equals(authenticationService.getCurrentUserId(), id)) {
             if (userService.deleteUser(id)) {
-                return ResponseEntity.status(HttpStatus.OK).body("The user with this " + id + " has been Deleted");
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The user with this " + id + " not found");
         }
@@ -84,8 +84,8 @@ public class UserController {
     @DeleteMapping
     private ResponseEntity<?> deleteAll() {
         if (userService.deleteAll()) {
-            return ResponseEntity.status(HttpStatus.OK).body("All users have been Deleted");
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error occurred while deleting all users");
+        return new ResponseEntity<>(HttpStatus.CONFLICT);
     }
 }

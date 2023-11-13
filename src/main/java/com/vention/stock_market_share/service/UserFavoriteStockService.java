@@ -23,21 +23,23 @@ public class UserFavoriteStockService {
     private final UserRepository userRepository;
     private final StockDataRepository stockDataRepository;
 
-    public void addFavoriteStocksForUser(AddFavoriteStocksRequest addFavoriteStocksRequest) {
+    public boolean addFavoriteStocksForUser(AddFavoriteStocksRequest addFavoriteStocksRequest) {
         if (!userExists(addFavoriteStocksRequest.getUserId()) || !allStocksExist(addFavoriteStocksRequest.getStockIds())) {
             throw new IllegalArgumentException("User or stock not found");
         }
         boolean isExisted = true;
+        boolean saved = false;
         for (Long stockId : addFavoriteStocksRequest.getStockIds()) {
             if (!userFavoriteStockRepository.existsByUserIdAndStockId(addFavoriteStocksRequest.getUserId(), stockId)) {
                 isExisted = false;
                 UserFavoriteStock favoriteStock = new UserFavoriteStock(addFavoriteStocksRequest.getUserId(), stockId);
-                userFavoriteStockRepository.save(favoriteStock);
+                 saved = userFavoriteStockRepository.save(favoriteStock);
             }
         }
         if (isExisted) {
-            throw new IllegalArgumentException("This stock has already been added to your favourites!!");
+            return false;
         }
+        return saved;
     }
 
     public List<Stock> getFavoriteStocks(Long userId) {

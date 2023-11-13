@@ -1,11 +1,13 @@
 package com.vention.stock_market_share.service;
 
+import com.vention.stock_market_share.exception.DataNotFoundException;
 import com.vention.stock_market_share.exception.TwelveDataApiException;
 import com.vention.stock_market_share.interfaces.TwelveApiClient;
 import com.vention.stock_market_share.response.TwelveDataApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 
 @Service
 @Slf4j
@@ -15,12 +17,18 @@ public class TwelveDataService {
 
     public TwelveDataApiResponse searchStockBySymbol(String symbol) {
         try {
-            return twelveApiClient.searchStockBySymbol(symbol);
+            TwelveDataApiResponse twelveDataApiResponse = twelveApiClient.searchStockBySymbol(symbol);
+
+            if (twelveDataApiResponse.getData().isEmpty()) {
+                throw new DataNotFoundException("No data is found while searching for stock with symbol: {} " + symbol);
+            }
+            return twelveDataApiResponse;
         } catch (TwelveDataApiException e) {
             log.error("Error while interacting with TwelveData API");
-            return null;
         }
+        return null;
     }
+
 
     public TwelveDataApiResponse searchAllStocks() {
         try {

@@ -43,7 +43,8 @@ create table public.users
     lastname  character varying(255),
     email     character varying(255) not null,
     age       integer,
-    role      character varying(255)
+    role      character varying(255),
+    isVerified boolean
 );
 create unique index unique_email_constraint on users using btree (email);
 
@@ -53,11 +54,12 @@ create table public.role
     admin  character varying(255)
 );
 
-create table public.token
-(
-    id        integer primary key not null default nextval('token_id_seq'::regclass),
-    body      character varying(255),
-    createdat date
+create table public.code (
+                             code character varying(50),
+                             email character varying(255)
 );
+
+
+
 
 

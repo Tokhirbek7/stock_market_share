@@ -23,6 +23,11 @@ public class CustomExceptionHandler extends Exception {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
+    @ExceptionHandler(DuplicateUsernameException.class)
+    public ResponseEntity<String> duplicateUsernameException(DuplicateUsernameException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
     @ExceptionHandler(UserAddException.class)
     public ResponseEntity<String> userAddException(UserAddException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());

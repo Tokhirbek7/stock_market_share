@@ -40,11 +40,11 @@ public class StockDataRepository {
                 preparedStatement.executeUpdate();
                 connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("Error occurred while executing SQL statement", e);
                 connection.rollback();
             }
-        } catch (Exception e) {
-            log.error("Error occurred while saving stock to the database ", e);
+        } catch (SQLException e) {
+            log.error("Error occurred while getting a database connection", e);
         }
     }
 

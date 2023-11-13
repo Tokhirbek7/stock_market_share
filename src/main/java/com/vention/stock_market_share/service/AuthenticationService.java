@@ -1,10 +1,7 @@
 package com.vention.stock_market_share.service;
 
 import com.vention.stock_market_share.config.JwtService;
-import com.vention.stock_market_share.dto.RefreshTokenRequest;
-import com.vention.stock_market_share.dto.SignInRequest;
-import com.vention.stock_market_share.dto.SignUpRequest;
-import com.vention.stock_market_share.dto.UserDto;
+import com.vention.stock_market_share.dto.*;
 import com.vention.stock_market_share.enums.Role;
 import com.vention.stock_market_share.model.User;
 import com.vention.stock_market_share.repository.UserRepository;
@@ -28,14 +25,16 @@ public class AuthenticationService {
 
 
     public boolean register(SignUpRequest request) {
-        User user = User.builder()
+        UserDto user = UserDto.builder()
                 .firstname(request.getFirstname())
                 .lastname(request.getLastname())
-                .email(request.getEmail())
                 .age(request.getAge())
+                .email(request.getEmail())
+                .username(request.getUsername())
+                .password(request.getPassword())
                 .role(Role.USER)
                 .build();
-        return userService.registerUserAndSendEmail(user);
+        return userService.register(user);
     }
 
     public AuthenticationResponse authenticate(SignInRequest request) {
@@ -63,6 +62,16 @@ public class AuthenticationService {
             return authenticationResponse;
         }
         return null;
+    }
+
+    public boolean verify(VerificationRequest request) {
+        if (request.getCode().equals(userService.getCodeViaEmail(request.getEmail()))) {
+            User byEmail = userService.findByEmail(request.getEmail());
+            if (!byEmail.isVerified()) {
+                return userService.updateUserSetIsVerifiedToTrue(byEmail);
+            }
+        }
+        return false;
     }
 
     public Long getCurrentUserId() {

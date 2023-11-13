@@ -1,5 +1,6 @@
 package com.vention.stock_market_share.service;
 
+import com.vention.stock_market_share.exception.DataNotFoundException;
 import com.vention.stock_market_share.model.Stock;
 import com.vention.stock_market_share.repository.StockDataRepository;
 import com.vention.stock_market_share.response.TwelveDataApiResponse;
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,7 +20,7 @@ public class DailyStockUpdaterService {
     private final TwelveDataService twelveDataService;
     private final StockDataRepository stockDataRepository;
 
-    @Scheduled(cron = "0 17 17 * * *")
+    @Scheduled(cron = "0 4 12 * * *")
     public void dailyUpdateAllStockData() {
         TwelveDataApiResponse twelveDataApiResponse = twelveDataService.searchAllStocks();
         List<TwelveDataApiResponse.StockData> data = twelveDataApiResponse.getData();
@@ -44,6 +44,10 @@ public class DailyStockUpdaterService {
     }
 
     public List<Stock> getStocksByDateAndSymbol(String symbol, Date date) {
-        return stockDataRepository.getStocksByDateAndSymbol(symbol, date);
+        List<Stock> stocksByDateAndSymbol = stockDataRepository.getStocksByDateAndSymbol(symbol, date);
+        if (stocksByDateAndSymbol.isEmpty()) {
+            throw new DataNotFoundException("No data found with this symbol: " + symbol + " and date: " + date);
+        }
+        return stocksByDateAndSymbol;
     }
 }

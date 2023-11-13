@@ -2,6 +2,7 @@ package com.vention.stock_market_share.dto;
 
 import com.vention.stock_market_share.enums.Role;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,6 +13,7 @@ import java.util.Collection;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 public class UserDto implements UserDetails {
     private Long id;
     private String firstname;
@@ -21,6 +23,7 @@ public class UserDto implements UserDetails {
     private Role role;
     private String password;
     private String username;
+    private boolean isVerified;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
